@@ -165,6 +165,14 @@ export default function OnboardingPage() {
         return;
       }
 
+      // 1b. Sign in immediately to establish session before profile insert
+      const { error: signInError } = await signIn(state.account.email, state.account.password);
+      if (signInError) {
+        setError(signInError.message || "Sign in after signup failed. Please try signing in manually.");
+        setSubmitting(false);
+        return;
+      }
+
       // 2. Create user profile
       const profileData = {
         first_name: state.account.firstName,
@@ -178,16 +186,17 @@ export default function OnboardingPage() {
         trade_focus: state.credentials.primaryFocus,
       };
 
-      const { error: profileError } = await createUserProfile(authUser.id, profileData);
+      const { data: profileResult, error: profileError } = await createUserProfile(authUser.id, profileData);
       if (profileError) {
         setError(profileError.message || "Failed to create profile. Please try again.");
         setSubmitting(false);
         return;
       }
 
-      // 3. Create acknowledgments
+      // 3. Create acknowledgments (use users table id, not auth id)
+      const profileId = profileResult?.id || authUser.id;
       const { error: ackError } = await createAcknowledgments(
-        authUser.id,
+        profileId,
         [...ACKNOWLEDGMENT_TYPES],
         "1.0.0",
         "1.2"
