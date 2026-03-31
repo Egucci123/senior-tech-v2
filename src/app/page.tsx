@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/ui/Header";
 import BottomNav, { type TabId } from "@/components/ui/BottomNav";
 import ChatInterface from "@/components/chat/ChatInterface";
@@ -12,27 +13,23 @@ import { useManuals } from "@/hooks/useManuals";
 
 export default function MainApp() {
   const router = useRouter();
+  const { session, user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("diagnose");
-  const [ready, setReady] = useState(false);
   const { manuals, hasNew, clearNew } = useManuals();
 
   useEffect(() => {
-    const onboardingComplete = localStorage.getItem("senior_tech_onboarding_complete");
-    if (!onboardingComplete) {
+    if (!loading && !session) {
       router.replace("/onboarding");
-      return;
     }
-    setReady(true);
-  }, [router]);
+  }, [loading, session, router]);
 
-  // Clear notification when user visits manuals tab
   useEffect(() => {
     if (activeTab === "manuals" && hasNew) {
       clearNew();
     }
   }, [activeTab, hasNew, clearNew]);
 
-  if (!ready) {
+  if (loading || !session) {
     return <div className="min-h-screen bg-[#0e0e0e] dot-grid" />;
   }
 
@@ -43,19 +40,19 @@ export default function MainApp() {
       case "diagnose":
         return (
           <div className="fixed inset-0 top-0 bottom-16 z-10">
-            <ChatInterface />
+            <ChatInterface user={user} />
           </div>
         );
       case "manuals":
-        return <ManualsScreen sharedManuals={manuals} />;
+        return <ManualsScreen sharedManuals={manuals} userId={user?.id} />;
       case "history":
-        return <HistoryScreen />;
+        return <HistoryScreen userId={user?.id} />;
       case "settings":
         return <ProfileScreen />;
       default:
         return (
           <div className="fixed inset-0 top-0 bottom-16 z-10">
-            <ChatInterface />
+            <ChatInterface user={user} />
           </div>
         );
     }

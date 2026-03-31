@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { ManualSearch } from "@/types";
+import { getManualSearches, createManualSearch } from "@/lib/supabase";
 
 /**
  * Module-level store for manuals shared between chat and manuals screen.
@@ -10,13 +11,38 @@ import type { ManualSearch } from "@/types";
 let _manuals: ManualSearch[] = [];
 let _hasNew = false;
 let _listeners: Set<() => void> = new Set();
+let _dbLoaded = false;
 
 function notify() {
   _listeners.forEach((fn) => fn());
 }
 
+/** Load manuals from the database and merge with in-memory store */
+export async function loadFromDb(userId: string) {
+  if (_dbLoaded) return;
+  try {
+    const { data, error } = await getManualSearches(userId);
+    if (!error && data) {
+      const dbManuals = data as ManualSearch[];
+      // Merge DB manuals with in-memory ones, avoiding duplicates by model_number
+      for (const dbManual of dbManuals) {
+        const exists = _manuals.some(
+          (m) => m.model_number.toLowerCase() === dbManual.model_number.toLowerCase()
+        );
+        if (!exists) {
+          _manuals.push(dbManual);
+        }
+      }
+      _dbLoaded = true;
+      notify();
+    }
+  } catch (e) {
+    console.error("Failed to load manuals from DB:", e);
+  }
+}
+
 /** Called from useChat when a model number is extracted from AI response */
-export function addManual(manual: ManualSearch) {
+export function addManual(manual: ManualSearch, userId?: string) {
   // Avoid duplicates by model_number (case-insensitive)
   const exists = _manuals.some(
     (m) => m.model_number.toLowerCase() === manual.model_number.toLowerCase()
@@ -25,6 +51,13 @@ export function addManual(manual: ManualSearch) {
     _manuals = [manual, ..._manuals];
     _hasNew = true;
     notify();
+
+    // Persist to DB (fire-and-forget) if userId available
+    if (userId) {
+      createManualSearch(userId, manual.model_number, manual.brand, manual.manual_urls)
+        .then(() => {})
+        .catch((e) => console.error("Failed to persist manual search:", e));
+    }
   }
 }
 
@@ -38,6 +71,8 @@ export function useManuals() {
       setHasNew(_hasNew);
     };
     _listeners.add(listener);
+    // Sync state on mount in case store was updated before listener was added
+    listener();
     return () => {
       _listeners.delete(listener);
     };

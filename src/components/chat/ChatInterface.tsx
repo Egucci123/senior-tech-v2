@@ -7,6 +7,7 @@ import ChatMessage from "./ChatMessage";
 import SafetyGate from "./SafetyGate";
 import VoiceInput from "./VoiceInput";
 import QuickReferenceDrawer from "../calculators/QuickReferenceDrawer";
+import type { User } from "@/types";
 
 /* ── Response chips that can appear after AI messages ── */
 interface ResponseChip {
@@ -23,7 +24,11 @@ function parseResponseChips(content: string): ResponseChip[] {
     .map((label) => ({ label }));
 }
 
-export default function ChatInterface() {
+interface ChatInterfaceProps {
+  user?: User | null;
+}
+
+export default function ChatInterface({ user }: ChatInterfaceProps) {
   const {
     messages,
     isLoading,
@@ -31,7 +36,7 @@ export default function ChatInterface() {
     sendMessage,
     confirmSafety,
     newDiagnostic,
-  } = useChat();
+  } = useChat(user ?? null);
 
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);

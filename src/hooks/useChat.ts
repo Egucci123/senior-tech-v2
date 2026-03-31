@@ -1,8 +1,15 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import type { ChatMessage, SessionState } from "@/types";
+import type { ChatMessage, SessionState, User } from "@/types";
 import { addManual } from "./useManuals";
+import {
+  createDiagnosticSession,
+  updateDiagnosticSession,
+  endDiagnosticSession,
+  createManualSearch,
+  logSafetyAcknowledgment,
+} from "@/lib/supabase";
 
 /* ── Convert a blob URL to base64 ── */
 async function blobUrlToBase64(blobUrl: string): Promise<{ base64: string; mediaType: string } | null> {
@@ -36,9 +43,9 @@ const SAFETY_TRIGGERS = [
   "meter on",
 ];
 
-function containsSafetyTrigger(text: string): boolean {
+function containsSafetyTrigger(text: string): string | null {
   const lower = text.toLowerCase();
-  return SAFETY_TRIGGERS.some((phrase) => lower.includes(phrase));
+  return SAFETY_TRIGGERS.find((phrase) => lower.includes(phrase)) || null;
 }
 
 /* ── Model routing ── */
@@ -84,7 +91,7 @@ export interface UseChatReturn {
   newDiagnostic: () => void;
 }
 
-export function useChat(): UseChatReturn {
+export function useChat(user: User | null): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionState, setSessionState] = useState<SessionState>(
     createInitialSessionState()
@@ -96,9 +103,22 @@ export function useChat(): UseChatReturn {
   >(null);
 
   const turnCountRef = useRef(0);
+  const currentSessionIdRef = useRef<string | null>(null);
 
   const sendMessage = useCallback(
     async (content: string, imageUrl?: string) => {
+      /* Create a diagnostic session on first message if user is logged in */
+      if (!currentSessionIdRef.current && user?.id) {
+        try {
+          const { data, error } = await createDiagnosticSession(user.id);
+          if (!error && data?.id) {
+            currentSessionIdRef.current = data.id;
+          }
+        } catch (e) {
+          console.error("Failed to create diagnostic session:", e);
+        }
+      }
+
       /* Build user message */
       const userMsg: ChatMessage = {
         id: crypto.randomUUID(),
@@ -142,9 +162,9 @@ export function useChat(): UseChatReturn {
       }
 
       try {
-        /* Get user info from localStorage */
-        const firstName = localStorage.getItem("senior_tech_first_name") || "Tech";
-        const experienceLevel = localStorage.getItem("senior_tech_experience_level") || "mid";
+        /* Get user info from user object, fall back to defaults */
+        const firstName = user?.first_name || "Tech";
+        const experienceLevel = user?.experience_level || "mid";
 
         const res = await fetch("/api/chat", {
           method: "POST",
@@ -157,6 +177,7 @@ export function useChat(): UseChatReturn {
             requestType,
             firstName,
             experienceLevel,
+            userId: user?.id,
           }),
         });
 
@@ -229,25 +250,42 @@ export function useChat(): UseChatReturn {
 
           /* Auto-populate manuals via shared store */
           const q = encodeURIComponent(`${extractedModel}`);
+          const manualUrls = [
+            { type: "INSTALL", url: `https://www.manualslib.com/search/?q=${q}+installation+manual` },
+            { type: "SERVICE", url: `https://www.manualslib.com/search/?q=${q}+service+manual` },
+            { type: "WIRING", url: `https://www.manualslib.com/search/?q=${q}+wiring+diagram` },
+            { type: "PARTS", url: `https://www.manualslib.com/search/?q=${q}+parts+list` },
+          ];
+
           addManual({
             id: crypto.randomUUID(),
-            user_id: "",
+            user_id: user?.id || "",
             model_number: extractedModel,
             brand: extractedBrand,
             search_date: new Date().toISOString(),
-            manual_urls: [
-              { type: "INSTALL", url: `https://www.manualslib.com/search/?q=${q}+installation+manual` },
-              { type: "SERVICE", url: `https://www.manualslib.com/search/?q=${q}+service+manual` },
-              { type: "WIRING", url: `https://www.manualslib.com/search/?q=${q}+wiring+diagram` },
-              { type: "PARTS", url: `https://www.manualslib.com/search/?q=${q}+parts+list` },
-            ],
+            manual_urls: manualUrls,
           });
+
+          /* Persist manual search to DB (fire-and-forget) */
+          if (user?.id) {
+            createManualSearch(user.id, extractedModel, extractedBrand, manualUrls)
+              .then(() => {})
+              .catch((e) => console.error("Failed to persist manual search:", e));
+          }
         }
 
         /* Check for safety triggers */
-        if (containsSafetyTrigger(assistantContent)) {
+        const triggerPhrase = containsSafetyTrigger(assistantContent);
+        if (triggerPhrase) {
           setPendingSafetyContent(assistantContent);
           setSafetyGateOpen(true);
+
+          /* Log safety trigger to DB (fire-and-forget) */
+          if (user?.id && currentSessionIdRef.current) {
+            logSafetyAcknowledgment(user.id, currentSessionIdRef.current, triggerPhrase)
+              .then(() => {})
+              .catch((e) => console.error("Failed to log safety acknowledgment:", e));
+          }
         }
 
         /* Update session state from symptoms */
@@ -264,6 +302,22 @@ export function useChat(): UseChatReturn {
             photos_received: [...prev.photos_received, imageUrl],
           }));
         }
+
+        /* Persist conversation to DB after AI response (fire-and-forget) */
+        if (currentSessionIdRef.current) {
+          // We need the final messages array — build it from what we know
+          const updatedMessages = [...messages, userMsg, { ...assistantMsg, content: assistantContent }];
+          updateDiagnosticSession(currentSessionIdRef.current, {
+            full_conversation: updatedMessages,
+            session_state: sessionState,
+            opening_message: updatedMessages.find((m) => m.role === "user")?.content || "",
+            equipment_brand: sessionState.equipment.brand || undefined,
+            equipment_model: sessionState.equipment.model || undefined,
+            serial_number: sessionState.equipment.serial_number || undefined,
+          })
+            .then(() => {})
+            .catch((e) => console.error("Failed to update diagnostic session:", e));
+        }
       } catch (error) {
         console.error("Chat error:", error);
         const errorMsg: ChatMessage = {
@@ -278,7 +332,7 @@ export function useChat(): UseChatReturn {
         setIsLoading(false);
       }
     },
-    [messages, sessionState]
+    [messages, sessionState, user]
   );
 
   const confirmSafety = useCallback(() => {
@@ -287,6 +341,14 @@ export function useChat(): UseChatReturn {
   }, []);
 
   const newDiagnostic = useCallback(() => {
+    /* End current session in DB before resetting (fire-and-forget) */
+    if (currentSessionIdRef.current) {
+      endDiagnosticSession(currentSessionIdRef.current, "unresolved")
+        .then(() => {})
+        .catch((e) => console.error("Failed to end diagnostic session:", e));
+      currentSessionIdRef.current = null;
+    }
+
     setMessages([]);
     setSessionState(createInitialSessionState());
     turnCountRef.current = 0;

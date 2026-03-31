@@ -1,4 +1,11 @@
 import { NextRequest } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+/* ── Server-side Supabase client for usage tracking ── */
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+);
 
 /* ── Constants ── */
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
@@ -45,7 +52,25 @@ export async function POST(request: NextRequest) {
     hasPhoto,
     turnCount,
     requestType,
+    userId,
   } = body;
+
+  /* ── Daily message cap check (75 soft cap) ── */
+  if (userId) {
+    const today = new Date().toISOString().split("T")[0];
+    const { count } = await supabaseAdmin
+      .from("api_usage")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("date", today);
+
+    if (count && count >= 75) {
+      return new Response(
+        JSON.stringify({ error: "daily_limit", message: "You've reached today's limit — resets at midnight." }),
+        { status: 429, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }
 
   const model = selectModel(requestType, hasPhoto, turnCount);
   const maxTokens = MAX_TOKENS[requestType] ?? 500;
@@ -192,7 +217,7 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         console.error("Stream processing error:", err);
       } finally {
-        /* Log usage for tracking */
+        /* Log usage to Supabase + console */
         if (inputTokens || outputTokens) {
           const costEstimate =
             model === MODEL_SONNET
@@ -202,6 +227,21 @@ export async function POST(request: NextRequest) {
           console.log(
             `[USAGE] model=${model} input=${inputTokens} output=${outputTokens} cost=$${costEstimate.toFixed(5)} type=${requestType}`
           );
+
+          /* Fire-and-forget DB write */
+          if (userId) {
+            supabaseAdmin.from("api_usage").insert({
+              user_id: userId,
+              date: new Date().toISOString().split("T")[0],
+              model_used: model,
+              input_tokens: inputTokens,
+              output_tokens: outputTokens,
+              estimated_cost: costEstimate,
+              request_type: requestType,
+            }).then(({ error: dbErr }) => {
+              if (dbErr) console.error("[USAGE DB] insert error:", dbErr.message);
+            });
+          }
         }
         controller.close();
       }

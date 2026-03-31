@@ -1,25 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, ExternalLink, Zap } from "lucide-react";
 import type { ManualSearch } from "@/types";
+import { getManualSearches, createManualSearch } from "@/lib/supabase";
 import ManualCard from "./ManualCard";
 
 interface ManualsScreenProps {
   sharedManuals?: ManualSearch[];
+  userId?: string;
 }
 
-export default function ManualsScreen({ sharedManuals = [] }: ManualsScreenProps) {
+export default function ManualsScreen({ sharedManuals = [], userId }: ManualsScreenProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [localManuals, setLocalManuals] = useState<ManualSearch[]>([]);
+  const [dbManuals, setDbManuals] = useState<ManualSearch[]>([]);
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [noResults, setNoResults] = useState(false);
 
-  // Merge: auto-found from diagnostics first, then manually searched
+  // Load manuals from DB on mount
+  useEffect(() => {
+    if (!userId) return;
+    getManualSearches(userId)
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setDbManuals(data as ManualSearch[]);
+        }
+      })
+      .catch((e) => console.error("Failed to load manuals from DB:", e));
+  }, [userId]);
+
+  // Merge: auto-found from diagnostics first, then DB manuals, then manually searched
   const allManuals = [
     ...sharedManuals,
+    ...dbManuals.filter(
+      (dm) => !sharedManuals.some((sm) => sm.model_number.toLowerCase() === dm.model_number.toLowerCase())
+    ),
     ...localManuals.filter(
-      (lm) => !sharedManuals.some((sm) => sm.model_number.toLowerCase() === lm.model_number.toLowerCase())
+      (lm) =>
+        !sharedManuals.some((sm) => sm.model_number.toLowerCase() === lm.model_number.toLowerCase()) &&
+        !dbManuals.some((dm) => dm.model_number.toLowerCase() === lm.model_number.toLowerCase())
     ),
   ];
 
@@ -41,23 +61,32 @@ export default function ManualsScreen({ sharedManuals = [] }: ManualsScreenProps
 
     // Create a new manual search entry with ManualsLib URLs
     const q = encodeURIComponent(query);
+    const manualUrls = [
+      { type: "INSTALL", url: `https://www.manualslib.com/search/?q=${q}+installation+manual` },
+      { type: "SERVICE", url: `https://www.manualslib.com/search/?q=${q}+service+manual` },
+      { type: "WIRING", url: `https://www.manualslib.com/search/?q=${q}+wiring+diagram` },
+      { type: "PARTS", url: `https://www.manualslib.com/search/?q=${q}+parts+list` },
+    ];
+
     const newManual: ManualSearch = {
       id: crypto.randomUUID(),
-      user_id: "",
+      user_id: userId || "",
       model_number: query,
       brand: "",
       search_date: new Date().toISOString(),
-      manual_urls: [
-        { type: "INSTALL", url: `https://www.manualslib.com/search/?q=${q}+installation+manual` },
-        { type: "SERVICE", url: `https://www.manualslib.com/search/?q=${q}+service+manual` },
-        { type: "WIRING", url: `https://www.manualslib.com/search/?q=${q}+wiring+diagram` },
-        { type: "PARTS", url: `https://www.manualslib.com/search/?q=${q}+parts+list` },
-      ],
+      manual_urls: manualUrls,
     };
 
     setLocalManuals((prev) => [newManual, ...prev]);
     setNoResults(false);
     setSearchQuery("");
+
+    // Persist to DB (fire-and-forget)
+    if (userId) {
+      createManualSearch(userId, query, "", manualUrls)
+        .then(() => {})
+        .catch((e) => console.error("Failed to persist manual search:", e));
+    }
   };
 
   const handleDelete = (id: string) => {

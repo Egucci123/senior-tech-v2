@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Thermometer,
   Contrast,
@@ -19,8 +20,10 @@ import {
   LogOut,
   ChevronRight,
   Wrench,
+  X,
 } from 'lucide-react';
-import type { User } from '@/types';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase, updateUserProfile } from '@/lib/supabase';
 
 /* ------------------------------------------------------------------ */
 /*  Toggle                                                            */
@@ -115,43 +118,162 @@ function NavChevron() {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Change Password Modal                                             */
+/* ------------------------------------------------------------------ */
+function ChangePasswordModal({ onClose }: { onClose: () => void }) {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setError('');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error: authError } = await supabase.auth.updateUser({ password });
+      if (authError) {
+        setError(authError.message);
+      } else {
+        setSuccess(true);
+      }
+    } catch {
+      setError('Failed to update password.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+      <div className="bg-surface-container-low rounded-lg p-6 w-full max-w-sm ghost-border">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-headline font-bold text-sm uppercase tracking-wide text-on-surface">
+            Change Password
+          </h3>
+          <button onClick={onClose} className="text-outline hover:text-on-surface">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {success ? (
+          <div>
+            <p className="font-body text-sm text-[#69cc69] mb-4">Password updated successfully.</p>
+            <button
+              onClick={onClose}
+              className="w-full h-10 rounded-lg bg-primary-container font-headline font-bold text-xs uppercase tracking-wide text-[#0e0e0e]"
+            >
+              CLOSE
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <input
+              type="password"
+              placeholder="New password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="h-10 px-3 rounded-lg bg-surface-container border border-outline-variant text-sm text-on-surface placeholder:text-outline/50 focus:outline-none focus:border-primary-container"
+            />
+            <input
+              type="password"
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="h-10 px-3 rounded-lg bg-surface-container border border-outline-variant text-sm text-on-surface placeholder:text-outline/50 focus:outline-none focus:border-primary-container"
+            />
+            {error && (
+              <p className="font-body text-xs text-error">{error}</p>
+            )}
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full h-10 rounded-lg bg-primary-container font-headline font-bold text-xs uppercase tracking-wide text-[#0e0e0e] disabled:opacity-50"
+            >
+              {submitting ? 'UPDATING...' : 'UPDATE PASSWORD'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  ProfileScreen                                                     */
 /* ------------------------------------------------------------------ */
 export default function ProfileScreen() {
-  /* ---- user data from localStorage ---- */
-  const [user, setUser] = useState<Partial<User>>({});
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('senior_tech_user');
-      if (raw) setUser(JSON.parse(raw));
-    } catch {
-      /* noop */
-    }
-    setLoaded(true);
-  }, []);
+  const router = useRouter();
+  const { session, user, loading, signOut } = useAuth();
 
   /* ---- local toggle / settings state ---- */
   const [highContrast, setHighContrast] = useState(false);
   const [autoSync, setAutoSync] = useState(true);
   const [biometric, setBiometric] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [clearingCache, setClearingCache] = useState(false);
 
-  if (!loaded) return null;
+  const handleSignOut = useCallback(async () => {
+    await signOut();
+    router.push('/onboarding');
+  }, [signOut, router]);
+
+  const handleToggle = useCallback(
+    (field: string, value: boolean) => {
+      if (session?.user?.id) {
+        updateUserProfile(session.user.id, { [field]: value })
+          .then(() => {})
+          .catch((e) => console.error('Failed to update user profile:', e));
+      }
+    },
+    [session]
+  );
+
+  const handleClearCache = useCallback(() => {
+    setClearingCache(true);
+    try {
+      // Clear diagnostic-related localStorage items
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('senior_tech_') || key.startsWith('diagnostic_'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
+    } catch {
+      /* noop */
+    }
+    setTimeout(() => setClearingCache(false), 1000);
+  }, []);
+
+  if (loading) return null;
 
   const initials =
-    ((user.first_name?.[0] ?? '') + (user.last_name?.[0] ?? '')).toUpperCase() || 'ST';
+    ((user?.first_name?.[0] ?? '') + (user?.last_name?.[0] ?? '')).toUpperCase() || 'ST';
   const fullName =
-    [user.first_name, user.last_name].filter(Boolean).join(' ').toUpperCase() || 'TECHNICIAN';
-  const company = user.company_name?.toUpperCase() || 'INDEPENDENT';
-  const yearsLabel = user.years_experience_range
+    [user?.first_name, user?.last_name].filter(Boolean).join(' ').toUpperCase() || 'TECHNICIAN';
+  const company = user?.company_name?.toUpperCase() || 'INDEPENDENT';
+  const yearsLabel = user?.years_experience_range
     ? `${user.years_experience_range} YRS EXPERIENCE`
-    : user.experience_level
+    : user?.experience_level
     ? `${user.experience_level.toUpperCase()} LEVEL`
     : '0-2 YRS EXPERIENCE';
 
   return (
     <div className="px-0 pt-16 pb-28 max-w-lg mx-auto overflow-y-auto">
+      {showPasswordModal && (
+        <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />
+      )}
+
       {/* ============================================================ */}
       {/*  PROFILE CARD                                                */}
       {/* ============================================================ */}
@@ -192,14 +314,24 @@ export default function ProfileScreen() {
         <SettingRow
           icon={Thermometer}
           label="Temperature Unit"
-          sub="CURRENT: CELSIUS (°C)"
+          sub="CURRENT: CELSIUS (&deg;C)"
           right={<NavChevron />}
         />
         <Divider />
         <SettingRow
           icon={Contrast}
           label="High-Contrast Mode"
-          right={<Toggle on={highContrast} onToggle={() => setHighContrast((v) => !v)} />}
+          right={
+            <Toggle
+              on={highContrast}
+              onToggle={() => {
+                setHighContrast((v) => {
+                  handleToggle('high_contrast', !v);
+                  return !v;
+                });
+              }}
+            />
+          }
         />
         <Divider />
         <SettingRow
@@ -219,21 +351,42 @@ export default function ProfileScreen() {
         <SettingRow
           icon={RefreshCw}
           label="Auto-Sync Job Data"
-          right={<Toggle on={autoSync} onToggle={() => setAutoSync((v) => !v)} />}
+          right={
+            <Toggle
+              on={autoSync}
+              onToggle={() => {
+                setAutoSync((v) => {
+                  handleToggle('auto_sync', !v);
+                  return !v;
+                });
+              }}
+            />
+          }
         />
         <Divider />
         <SettingRow
           icon={Fingerprint}
           label="Biometric Login"
-          right={<Toggle on={biometric} onToggle={() => setBiometric((v) => !v)} />}
+          right={
+            <Toggle
+              on={biometric}
+              onToggle={() => {
+                setBiometric((v) => {
+                  handleToggle('biometric_login', !v);
+                  return !v;
+                });
+              }}
+            />
+          }
         />
         <Divider />
         <SettingRow
           icon={Trash2}
           label="Clear Diagnostic Cache"
+          onClick={handleClearCache}
           right={
             <span className="font-headline font-bold text-xs uppercase tracking-wider text-primary-container">
-              WIPE
+              {clearingCache ? 'WIPED' : 'WIPE'}
             </span>
           }
         />
@@ -248,14 +401,14 @@ export default function ProfileScreen() {
         <SettingRow
           icon={Award}
           label="EPA 608 Number"
-          sub={user.epa_608_number || 'TAP TO ADD'}
+          sub={user?.epa_608_number || 'TAP TO ADD'}
           right={<NavChevron />}
         />
         <Divider />
         <SettingRow
           icon={KeyRound}
           label="State License Number"
-          sub={user.state_license_number || 'TAP TO ADD'}
+          sub={user?.state_license_number || 'TAP TO ADD'}
           right={<NavChevron />}
         />
       </div>
@@ -269,11 +422,16 @@ export default function ProfileScreen() {
         <SettingRow
           icon={Mail}
           label="Email"
-          sub={user.email?.toUpperCase() || 'NOT SET'}
+          sub={user?.email?.toUpperCase() || 'NOT SET'}
           right={<NavChevron />}
         />
         <Divider />
-        <SettingRow icon={Lock} label="Change Password" right={<NavChevron />} />
+        <SettingRow
+          icon={Lock}
+          label="Change Password"
+          onClick={() => setShowPasswordModal(true)}
+          right={<NavChevron />}
+        />
       </div>
 
       {/* ============================================================ */}
@@ -285,7 +443,7 @@ export default function ProfileScreen() {
         <SettingRow
           icon={CreditCard}
           label="Current Plan"
-          sub="FREE TIER \u2014 ACTIVE"
+          sub="FREE TIER &mdash; ACTIVE"
           right={<NavChevron />}
         />
         <Divider />
@@ -312,7 +470,10 @@ export default function ProfileScreen() {
 
       {/* Sign Out */}
       <div className="mx-4 mt-5">
-        <button className="w-full h-12 rounded-lg border border-error/40 font-headline font-bold text-sm uppercase tracking-wider text-error transition-colors active:bg-error/10 flex items-center justify-center gap-2">
+        <button
+          onClick={handleSignOut}
+          className="w-full h-12 rounded-lg border border-error/40 font-headline font-bold text-sm uppercase tracking-wider text-error transition-colors active:bg-error/10 flex items-center justify-center gap-2"
+        >
           <LogOut className="w-4 h-4" />
           SIGN OUT
         </button>

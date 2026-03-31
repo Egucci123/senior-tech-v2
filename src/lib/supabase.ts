@@ -4,3 +4,247 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// ────────────────────────────────────────────
+// Auth helpers
+// ────────────────────────────────────────────
+
+export async function signUp(email: string, password: string) {
+  return supabase.auth.signUp({ email, password });
+}
+
+export async function signIn(email: string, password: string) {
+  return supabase.auth.signInWithPassword({ email, password });
+}
+
+export async function signOut() {
+  return supabase.auth.signOut();
+}
+
+export async function getSession() {
+  return supabase.auth.getSession();
+}
+
+export async function getAuthUser() {
+  return supabase.auth.getUser();
+}
+
+// ────────────────────────────────────────────
+// User profile (table: users)
+// ────────────────────────────────────────────
+
+export async function createUserProfile(
+  authId: string,
+  data: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    company_name?: string;
+    epa_608_number?: string;
+    state_license_number?: string;
+    experience_level?: string;
+    years_experience_range?: string;
+    trade_focus?: string[];
+  }
+) {
+  return supabase.from("users").insert({
+    auth_id: authId,
+    ...data,
+    onboarding_completed_at: new Date().toISOString(),
+    terms_version_accepted: "1.2",
+  }).select().single();
+}
+
+export async function getUserProfile(authId: string) {
+  return supabase.from("users").select("*").eq("auth_id", authId).single();
+}
+
+export async function updateUserProfile(
+  authId: string,
+  updates: Record<string, unknown>
+) {
+  return supabase.from("users").update(updates).eq("auth_id", authId).select().single();
+}
+
+// ────────────────────────────────────────────
+// Acknowledgments (table: user_acknowledgments)
+// ────────────────────────────────────────────
+
+export async function createAcknowledgments(
+  userId: string,
+  types: string[],
+  appVersion: string,
+  termsVersion: string
+) {
+  const rows = types.map((type) => ({
+    user_id: userId,
+    acknowledgment_type: type,
+    acknowledged_at: new Date().toISOString(),
+    app_version: appVersion,
+    terms_version: termsVersion,
+  }));
+  return supabase.from("user_acknowledgments").insert(rows).select();
+}
+
+// ────────────────────────────────────────────
+// Diagnostic sessions (table: diagnostic_sessions)
+// ────────────────────────────────────────────
+
+export async function createDiagnosticSession(userId: string) {
+  return supabase
+    .from("diagnostic_sessions")
+    .insert({
+      user_id: userId,
+      started_at: new Date().toISOString(),
+      status: "ongoing",
+    })
+    .select()
+    .single();
+}
+
+export async function updateDiagnosticSession(
+  sessionId: string,
+  updates: Record<string, unknown>
+) {
+  return supabase
+    .from("diagnostic_sessions")
+    .update(updates)
+    .eq("id", sessionId)
+    .select()
+    .single();
+}
+
+export async function endDiagnosticSession(
+  sessionId: string,
+  status: "resolved" | "unresolved",
+  jobSummary?: string,
+  checklist?: string
+) {
+  return supabase
+    .from("diagnostic_sessions")
+    .update({
+      ended_at: new Date().toISOString(),
+      status,
+      ...(jobSummary !== undefined && { job_summary: jobSummary }),
+      ...(checklist !== undefined && { checklist }),
+    })
+    .eq("id", sessionId)
+    .select()
+    .single();
+}
+
+export async function getDiagnosticSessions(
+  userId: string,
+  status?: string,
+  limit?: number
+) {
+  let query = supabase
+    .from("diagnostic_sessions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("started_at", { ascending: false });
+
+  if (status) {
+    query = query.eq("status", status);
+  }
+  if (limit) {
+    query = query.limit(limit);
+  }
+
+  return query;
+}
+
+export async function getDiagnosticSession(sessionId: string) {
+  return supabase
+    .from("diagnostic_sessions")
+    .select("*")
+    .eq("id", sessionId)
+    .single();
+}
+
+// ────────────────────────────────────────────
+// Manual searches (table: manual_searches)
+// ────────────────────────────────────────────
+
+export async function createManualSearch(
+  userId: string,
+  modelNumber: string,
+  brand: string,
+  manualUrls: { type: string; url: string }[]
+) {
+  return supabase
+    .from("manual_searches")
+    .insert({
+      user_id: userId,
+      model_number: modelNumber,
+      brand,
+      manual_urls: manualUrls,
+    })
+    .select()
+    .single();
+}
+
+export async function getManualSearches(userId: string) {
+  return supabase
+    .from("manual_searches")
+    .select("*")
+    .eq("user_id", userId)
+    .order("search_date", { ascending: false })
+    .limit(10);
+}
+
+// ────────────────────────────────────────────
+// API usage (table: api_usage)
+// ────────────────────────────────────────────
+
+export async function logApiUsage(
+  userId: string,
+  modelUsed: string,
+  inputTokens: number,
+  outputTokens: number,
+  estimatedCost: number,
+  requestType: string
+) {
+  return supabase
+    .from("api_usage")
+    .insert({
+      user_id: userId,
+      model_used: modelUsed,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      estimated_cost: estimatedCost,
+      request_type: requestType,
+    })
+    .select()
+    .single();
+}
+
+export async function getDailyMessageCount(userId: string) {
+  const today = new Date().toISOString().split("T")[0];
+  return supabase
+    .from("api_usage")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("date", today);
+}
+
+// ────────────────────────────────────────────
+// Safety acknowledgments (table: safety_acknowledgments)
+// ────────────────────────────────────────────
+
+export async function logSafetyAcknowledgment(
+  userId: string,
+  sessionId: string,
+  triggerPhrase: string
+) {
+  return supabase
+    .from("safety_acknowledgments")
+    .insert({
+      user_id: userId,
+      session_id: sessionId,
+      trigger_phrase: triggerPhrase,
+      triggered_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+}
