@@ -12,7 +12,7 @@ const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 
 const MODEL_SONNET = "claude-3-5-sonnet-20241022";
-const MODEL_HAIKU = "claude-3-haiku-20240307";
+const MODEL_HAIKU = "claude-3-5-sonnet-20241022";
 
 const MAX_TOKENS: Record<string, number> = {
   photo: 1500,
