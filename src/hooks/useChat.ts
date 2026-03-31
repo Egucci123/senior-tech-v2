@@ -11,21 +11,41 @@ import {
   logSafetyAcknowledgment,
 } from "@/lib/supabase";
 
-/* ── Convert a blob URL to base64 ── */
+/* ── Convert a blob URL to base64, resizing to max 1024px ── */
 async function blobUrlToBase64(blobUrl: string): Promise<{ base64: string; mediaType: string } | null> {
   try {
     const response = await fetch(blobUrl);
     const blob = await response.blob();
+    const mediaType = blob.type || "image/jpeg";
+
     return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        const [header, data] = dataUrl.split(",");
-        const mediaType = header.match(/:(.*?);/)?.[1] || "image/jpeg";
-        resolve({ base64: data, mediaType });
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(blob);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const MAX = 1024;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) {
+            height = Math.round((height * MAX) / width);
+            width = MAX;
+          } else {
+            width = Math.round((width * MAX) / height);
+            height = MAX;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { resolve(null); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        const base64 = dataUrl.split(",")[1];
+        resolve({ base64, mediaType: "image/jpeg" });
       };
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
+      img.onerror = () => resolve(null);
+      img.src = objectUrl;
     });
   } catch {
     return null;
