@@ -1,0 +1,338 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import {
+  Thermometer,
+  Contrast,
+  Globe,
+  RefreshCw,
+  Fingerprint,
+  Trash2,
+  Award,
+  KeyRound,
+  Mail,
+  Lock,
+  CreditCard,
+  FileText,
+  Shield,
+  Info,
+  LogOut,
+  ChevronRight,
+  Wrench,
+} from 'lucide-react';
+import type { User } from '@/types';
+
+/* ------------------------------------------------------------------ */
+/*  Toggle                                                            */
+/* ------------------------------------------------------------------ */
+function Toggle({
+  on,
+  onToggle,
+}: {
+  on: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      role="switch"
+      aria-checked={on}
+      onClick={onToggle}
+      className="relative flex-shrink-0 h-[26px] w-[48px] rounded-full transition-colors duration-200"
+      style={{ backgroundColor: on ? '#4fc3f7' : '#2a2a2a' }}
+    >
+      <span
+        className="absolute top-[3px] left-[3px] h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
+        style={{ transform: on ? 'translateX(22px)' : 'translateX(0)' }}
+      />
+    </button>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Section header                                                    */
+/* ------------------------------------------------------------------ */
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2 px-4 pt-6 pb-2">
+      <span className="w-2 h-2 rounded-full bg-tertiary flex-shrink-0" />
+      <span className="font-headline font-bold text-[11px] uppercase tracking-widest text-outline">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Setting row                                                       */
+/* ------------------------------------------------------------------ */
+interface SettingRowProps {
+  icon: React.ElementType;
+  label: string;
+  sub?: string;
+  right?: React.ReactNode;
+  onClick?: () => void;
+  danger?: boolean;
+}
+
+function SettingRow({ icon: Icon, label, sub, right, onClick, danger }: SettingRowProps) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-3 w-full px-4 py-3 text-left transition-colors active:bg-surface-container-high/40"
+    >
+      <div className="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0">
+        <Icon className={`w-[18px] h-[18px] ${danger ? 'text-error' : 'text-outline'}`} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <span
+          className={`font-headline font-bold text-sm uppercase tracking-wide block ${
+            danger ? 'text-error' : 'text-on-surface'
+          }`}
+        >
+          {label}
+        </span>
+        {sub && (
+          <span className="font-body text-xs text-outline block mt-0.5 truncate">{sub}</span>
+        )}
+      </div>
+      {right}
+    </button>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Divider                                                           */
+/* ------------------------------------------------------------------ */
+function Divider() {
+  return <div className="h-px bg-outline-variant/30 mx-4" />;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Chevron shorthand                                                 */
+/* ------------------------------------------------------------------ */
+function NavChevron() {
+  return <ChevronRight className="w-4 h-4 text-outline flex-shrink-0" />;
+}
+
+/* ------------------------------------------------------------------ */
+/*  ProfileScreen                                                     */
+/* ------------------------------------------------------------------ */
+export default function ProfileScreen() {
+  /* ---- user data from localStorage ---- */
+  const [user, setUser] = useState<Partial<User>>({});
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('senior_tech_user');
+      if (raw) setUser(JSON.parse(raw));
+    } catch {
+      /* noop */
+    }
+    setLoaded(true);
+  }, []);
+
+  /* ---- local toggle / settings state ---- */
+  const [highContrast, setHighContrast] = useState(false);
+  const [autoSync, setAutoSync] = useState(true);
+  const [biometric, setBiometric] = useState(false);
+
+  if (!loaded) return null;
+
+  const initials =
+    ((user.first_name?.[0] ?? '') + (user.last_name?.[0] ?? '')).toUpperCase() || 'ST';
+  const fullName =
+    [user.first_name, user.last_name].filter(Boolean).join(' ').toUpperCase() || 'TECHNICIAN';
+  const company = user.company_name?.toUpperCase() || 'INDEPENDENT';
+  const yearsLabel = user.years_experience_range
+    ? `${user.years_experience_range} YRS EXPERIENCE`
+    : user.experience_level
+    ? `${user.experience_level.toUpperCase()} LEVEL`
+    : '0-2 YRS EXPERIENCE';
+
+  return (
+    <div className="px-0 pt-16 pb-28 max-w-lg mx-auto overflow-y-auto">
+      {/* ============================================================ */}
+      {/*  PROFILE CARD                                                */}
+      {/* ============================================================ */}
+      <div className="bg-surface-container-low ghost-border rounded-lg mx-4 mt-4 p-5 flex flex-col items-center">
+        {/* Hex avatar */}
+        <div
+          className="clip-hex w-20 h-20 flex items-center justify-center text-xl font-headline font-bold tracking-wider"
+          style={{ backgroundColor: '#4fc3f7', color: '#0e0e0e' }}
+        >
+          {initials}
+        </div>
+
+        {/* Name */}
+        <h2 className="font-headline font-bold text-lg uppercase tracking-wide text-on-surface mt-3">
+          {fullName}
+        </h2>
+
+        {/* Role / Company */}
+        <p className="font-headline text-xs uppercase tracking-wider text-on-surface-variant mt-0.5">
+          LEAD FIELD ENGINEER | {company}
+        </p>
+
+        {/* Experience badge */}
+        <span
+          className="inline-block mt-3 px-3 py-1 rounded-full text-[10px] font-headline font-bold uppercase tracking-wider"
+          style={{ backgroundColor: '#4fc3f7', color: '#0e0e0e' }}
+        >
+          {yearsLabel}
+        </span>
+      </div>
+
+      {/* ============================================================ */}
+      {/*  ZONE_01: SYSTEM_PREFERENCES                                 */}
+      {/* ============================================================ */}
+      <SectionHeader label="ZONE_01: SYSTEM_PREFERENCES" />
+
+      <div className="bg-surface-container-low ghost-border rounded-lg mx-4 overflow-hidden">
+        <SettingRow
+          icon={Thermometer}
+          label="Temperature Unit"
+          sub="CURRENT: CELSIUS (°C)"
+          right={<NavChevron />}
+        />
+        <Divider />
+        <SettingRow
+          icon={Contrast}
+          label="High-Contrast Mode"
+          right={<Toggle on={highContrast} onToggle={() => setHighContrast((v) => !v)} />}
+        />
+        <Divider />
+        <SettingRow
+          icon={Globe}
+          label="Interface Language"
+          sub="EN-US"
+          right={<NavChevron />}
+        />
+      </div>
+
+      {/* ============================================================ */}
+      {/*  ZONE_02: SECURE_COMMS                                       */}
+      {/* ============================================================ */}
+      <SectionHeader label="ZONE_02: SECURE_COMMS" />
+
+      <div className="bg-surface-container-low ghost-border rounded-lg mx-4 overflow-hidden">
+        <SettingRow
+          icon={RefreshCw}
+          label="Auto-Sync Job Data"
+          right={<Toggle on={autoSync} onToggle={() => setAutoSync((v) => !v)} />}
+        />
+        <Divider />
+        <SettingRow
+          icon={Fingerprint}
+          label="Biometric Login"
+          right={<Toggle on={biometric} onToggle={() => setBiometric((v) => !v)} />}
+        />
+        <Divider />
+        <SettingRow
+          icon={Trash2}
+          label="Clear Diagnostic Cache"
+          right={
+            <span className="font-headline font-bold text-xs uppercase tracking-wider text-primary-container">
+              WIPE
+            </span>
+          }
+        />
+      </div>
+
+      {/* ============================================================ */}
+      {/*  ZONE_03: CREDENTIALS                                        */}
+      {/* ============================================================ */}
+      <SectionHeader label="ZONE_03: CREDENTIALS" />
+
+      <div className="bg-surface-container-low ghost-border rounded-lg mx-4 overflow-hidden">
+        <SettingRow
+          icon={Award}
+          label="EPA 608 Number"
+          sub={user.epa_608_number || 'TAP TO ADD'}
+          right={<NavChevron />}
+        />
+        <Divider />
+        <SettingRow
+          icon={KeyRound}
+          label="State License Number"
+          sub={user.state_license_number || 'TAP TO ADD'}
+          right={<NavChevron />}
+        />
+      </div>
+
+      {/* ============================================================ */}
+      {/*  ZONE_04: ACCOUNT                                            */}
+      {/* ============================================================ */}
+      <SectionHeader label="ZONE_04: ACCOUNT" />
+
+      <div className="bg-surface-container-low ghost-border rounded-lg mx-4 overflow-hidden">
+        <SettingRow
+          icon={Mail}
+          label="Email"
+          sub={user.email?.toUpperCase() || 'NOT SET'}
+          right={<NavChevron />}
+        />
+        <Divider />
+        <SettingRow icon={Lock} label="Change Password" right={<NavChevron />} />
+      </div>
+
+      {/* ============================================================ */}
+      {/*  ZONE_05: SUBSCRIPTION                                       */}
+      {/* ============================================================ */}
+      <SectionHeader label="ZONE_05: SUBSCRIPTION" />
+
+      <div className="bg-surface-container-low ghost-border rounded-lg mx-4 overflow-hidden">
+        <SettingRow
+          icon={CreditCard}
+          label="Current Plan"
+          sub="FREE TIER \u2014 ACTIVE"
+          right={<NavChevron />}
+        />
+        <Divider />
+        <SettingRow icon={CreditCard} label="Manage Subscription" right={<NavChevron />} />
+      </div>
+
+      {/* ============================================================ */}
+      {/*  ZONE_06: ABOUT                                              */}
+      {/* ============================================================ */}
+      <SectionHeader label="ZONE_06: ABOUT" />
+
+      <div className="bg-surface-container-low ghost-border rounded-lg mx-4 overflow-hidden">
+        <SettingRow
+          icon={FileText}
+          label="Terms of Service"
+          sub="VERSION 1.2"
+          right={<NavChevron />}
+        />
+        <Divider />
+        <SettingRow icon={Shield} label="Privacy Policy" right={<NavChevron />} />
+        <Divider />
+        <SettingRow icon={Info} label="App Version" sub="4.8.2-A" />
+      </div>
+
+      {/* Sign Out */}
+      <div className="mx-4 mt-5">
+        <button className="w-full h-12 rounded-lg border border-error/40 font-headline font-bold text-sm uppercase tracking-wider text-error transition-colors active:bg-error/10 flex items-center justify-center gap-2">
+          <LogOut className="w-4 h-4" />
+          SIGN OUT
+        </button>
+      </div>
+
+      {/* ============================================================ */}
+      {/*  WRENCH GRAPHIC + FOOTER                                     */}
+      {/* ============================================================ */}
+      <div className="flex flex-col items-center mt-10 mb-4 opacity-[0.07]">
+        <Wrench className="w-24 h-24" />
+      </div>
+
+      <div className="text-center pb-4">
+        <p className="font-headline text-[10px] uppercase tracking-[0.25em] text-outline/50">
+          FIRMWARE V.4.8.2-A
+        </p>
+        <p className="font-headline text-[9px] uppercase tracking-[0.2em] text-outline/30 mt-1">
+          MACHINED BY INDUSTRIAL UI CORE
+        </p>
+      </div>
+    </div>
+  );
+}

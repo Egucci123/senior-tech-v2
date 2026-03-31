@@ -1,0 +1,248 @@
+{
+  "_metadata": {
+    "description": "Refrigerant reference guide for HVAC field technicians",
+    "last_reviewed": "2026-03",
+    "disclaimer": "Always verify with manufacturer specifications and local codes"
+  },
+  "r22_replacement_options": {
+    "status": "R-22 production banned in US since Jan 1, 2020 (EPA Clean Air Act). Only reclaimed/recycled R-22 available.",
+    "replacements": {
+      "MO99 (R-438A)": {
+        "manufacturer": "Chemours",
+        "type": "Drop-in (near)",
+        "composition": "R-32/R-125/R-134a/R-600/R-601a",
+        "oil_compatibility": "Compatible with existing MO (mineral oil) and AB (alkylbenzene) — no oil change required in most cases",
+        "capacity_vs_r22": "95-97%",
+        "notes": [
+          "Most popular R-22 retrofit refrigerant",
+          "System must be fully evacuated of R-22 before charging — do NOT mix",
+          "May need TXV adjustment due to slightly different pressure-temp curve",
+          "Liquid charge only",
+          "Suction pressure runs slightly lower than R-22",
+          "Discharge pressure runs slightly higher than R-22",
+          "Good for AC and medium-temp refrigeration"
+        ],
+        "typical_suction_pressure_range_psig": "55-70 (cooling mode, 75°F indoor)",
+        "typical_discharge_pressure_range_psig": "220-310"
+      },
+      "RS-44b (R-453A)": {
+        "manufacturer": "Chemours (formerly DuPont)",
+        "type": "Drop-in (near)",
+        "composition": "R-32/R-125/R-134a/R-227ea/R-600/R-601a",
+        "oil_compatibility": "Compatible with MO and AB oil — no oil change needed",
+        "capacity_vs_r22": "96-98%",
+        "notes": [
+          "Closest match to R-22 operating pressures of any replacement",
+          "Lowest discharge temperature of R-22 alternatives",
+          "Good for compressor longevity",
+          "Liquid charge only",
+          "Works well in residential AC, heat pumps, and medium-temp refrigeration",
+          "TXV may need slight adjustment",
+          "System must be evacuated of R-22 before charging"
+        ],
+        "typical_suction_pressure_range_psig": "58-72 (cooling mode, 75°F indoor)",
+        "typical_discharge_pressure_range_psig": "210-300"
+      },
+      "NU-22B (R-422B)": {
+        "manufacturer": "National Refrigerants",
+        "type": "Drop-in (near)",
+        "composition": "R-125/R-134a/R-600a",
+        "oil_compatibility": "Compatible with MO and AB oil — no oil change needed",
+        "capacity_vs_r22": "90-95%",
+        "notes": [
+          "Lower capacity than R-22 — may see slightly reduced cooling",
+          "Higher discharge temps than MO99 or RS-44b",
+          "Acceptable for residential AC systems",
+          "Not recommended for low-temp refrigeration",
+          "Liquid charge only",
+          "Monitor discharge temp closely — may need to add discharge line thermistor",
+          "Less commonly used than MO99/RS-44b due to capacity reduction"
+        ],
+        "typical_suction_pressure_range_psig": "50-65 (cooling mode, 75°F indoor)",
+        "typical_discharge_pressure_range_psig": "230-320"
+      },
+      "R-407C": {
+        "manufacturer": "Various",
+        "type": "Retrofit (requires oil change)",
+        "composition": "R-32/R-125/R-134a",
+        "oil_compatibility": "Requires POE oil — must flush mineral oil from system",
+        "capacity_vs_r22": "95-100%",
+        "notes": [
+          "Requires oil change to POE (polyolester)",
+          "Has temperature glide (~8°F) — use midpoint for superheat/subcooling",
+          "Pressures very similar to R-22",
+          "Good capacity match",
+          "More labor-intensive retrofit due to oil change",
+          "Must replace filter drier (POE oil is hygroscopic)",
+          "Zeotropic blend — liquid charge only"
+        ],
+        "typical_suction_pressure_range_psig": "60-75 (cooling mode, 75°F indoor)",
+        "typical_discharge_pressure_range_psig": "215-305"
+      }
+    },
+    "retrofit_procedure_notes": [
+      "1. Record existing R-22 operating pressures, superheat, subcooling for comparison",
+      "2. Recover all R-22 from system (do NOT vent — EPA violation)",
+      "3. Replace filter drier (required for all retrofits)",
+      "4. If using R-407C, flush system and change to POE oil",
+      "5. Evacuate system to 500 microns minimum",
+      "6. Charge replacement refrigerant in liquid phase only",
+      "7. Adjust TXV if needed based on superheat readings",
+      "8. Label system with new refrigerant type (EPA required)",
+      "9. Compare operating pressures to R-22 baseline — slight differences are normal",
+      "10. Monitor discharge temp — should not exceed 225°F"
+    ]
+  },
+  "r410a_phase_out": {
+    "status": "R-410A is being phased down under the AIM Act (American Innovation and Manufacturing Act of 2020)",
+    "timeline": {
+      "2025": "New residential/commercial AC and heat pump equipment must use lower-GWP refrigerants (GWP < 700). R-410A GWP = 2088.",
+      "2025_and_beyond": "R-410A still available for servicing existing equipment — no ban on servicing",
+      "2026_current": "Manufacturers have largely transitioned new equipment lines to R-454B or R-32",
+      "future": "R-410A expected to remain available for service for 15-20+ years as installed base is maintained"
+    },
+    "key_points": [
+      "R-410A is NOT banned for servicing existing systems",
+      "New equipment manufactured after Jan 1, 2025 must use approved lower-GWP alternatives",
+      "R-410A price expected to increase as production decreases",
+      "Stock up on R-410A for service work on existing systems",
+      "Existing R-410A systems do NOT need to be converted"
+    ]
+  },
+  "r454b_transition": {
+    "trade_name": "Opteon XL41",
+    "manufacturer": "Chemours",
+    "gwp": 466,
+    "safety_class": "A2L (mildly flammable)",
+    "composition": "R-32 (68.9%) / R-1234yf (31.1%)",
+    "operating_pressures": "Very similar to R-410A — approximately 3-5% lower",
+    "key_differences_from_r410a": [
+      "A2L classification — mildly flammable, requires updated safety standards",
+      "Slightly lower operating pressures than R-410A",
+      "Lower discharge temperatures than R-410A (better for compressor life)",
+      "Requires R-454B rated equipment — cannot drop into R-410A systems",
+      "POE oil compatible (same as R-410A)",
+      "Leak detectors must be rated for A2L refrigerants",
+      "Brazing procedures require nitrogen purge (same as R-410A)",
+      "Recovery equipment must be rated for A2L refrigerants",
+      "Charge limits apply per ASHRAE 15 and UL/CSA 60335-2-40"
+    ],
+    "technician_requirements": [
+      "EPA Section 608 certification still required",
+      "Additional A2L safety training recommended (some jurisdictions require it)",
+      "Must use A2L-rated recovery machines and leak detectors",
+      "No open flames during service when refrigerant may be present",
+      "Adequate ventilation required during service",
+      "Follow manufacturer charge limits — do not exceed nameplate charge"
+    ]
+  },
+  "r32_info": {
+    "gwp": 675,
+    "safety_class": "A2L (mildly flammable)",
+    "notes": [
+      "Single-component refrigerant (not a blend) — no temperature glide",
+      "Used widely in Asia and Europe, growing adoption in US",
+      "Higher discharge temperatures than R-410A — monitor closely",
+      "About 30% lower charge required than R-410A for equivalent capacity",
+      "Requires R-32 specific equipment — cannot be used in R-410A systems",
+      "POE oil compatible",
+      "A2L safety requirements apply (same as R-454B)",
+      "Common in Daikin ductless/mini-split systems"
+    ]
+  },
+  "oil_compatibility": {
+    "R-22": {
+      "required_oil": "Mineral Oil (MO) or Alkylbenzene (AB)",
+      "notes": "Standard mineral oil. AB oil is a common upgrade for better return."
+    },
+    "R-410A": {
+      "required_oil": "Polyolester (POE)",
+      "notes": "POE oil is hygroscopic — keep sealed until use. Always replace drier when system is opened."
+    },
+    "R-454B": {
+      "required_oil": "Polyolester (POE)",
+      "notes": "Same POE oil as R-410A. Follow manufacturer specs for viscosity grade."
+    },
+    "R-32": {
+      "required_oil": "Polyolester (POE)",
+      "notes": "POE oil required. Use manufacturer-specified viscosity."
+    },
+    "R-407C": {
+      "required_oil": "Polyolester (POE)",
+      "notes": "Must flush mineral oil when retrofitting from R-22. POE is hygroscopic."
+    },
+    "R-134a": {
+      "required_oil": "Polyolester (POE) or PAG (automotive AC)",
+      "notes": "HVAC applications use POE. Automotive uses PAG — do not mix PAG and POE."
+    },
+    "MO99 (R-438A)": {
+      "required_oil": "Mineral Oil (MO), Alkylbenzene (AB), or POE",
+      "notes": "Works with existing MO/AB in R-22 retrofits — major advantage, no oil change needed."
+    },
+    "RS-44b (R-453A)": {
+      "required_oil": "Mineral Oil (MO), Alkylbenzene (AB), or POE",
+      "notes": "Compatible with existing oil in R-22 systems — no oil change required."
+    }
+  },
+  "pressure_comparison_chart": {
+    "description": "Side-by-side pressure comparison at common saturation temperatures (cooling mode)",
+    "unit": "psig",
+    "at_40F_evaporator": {
+      "R-22": 68,
+      "R-410A": 118,
+      "R-454B": 112,
+      "R-32": 120,
+      "R-407C": 69
+    },
+    "at_45F_evaporator": {
+      "R-22": 76,
+      "R-410A": 130,
+      "R-454B": 124,
+      "R-32": 133,
+      "R-407C": 77
+    },
+    "at_50F_evaporator": {
+      "R-22": 84,
+      "R-410A": 143,
+      "R-454B": 136,
+      "R-32": 146,
+      "R-407C": 85
+    },
+    "at_100F_condenser": {
+      "R-22": 196,
+      "R-410A": 317,
+      "R-454B": 303,
+      "R-32": 326,
+      "R-407C": 199
+    },
+    "at_110F_condenser": {
+      "R-22": 226,
+      "R-410A": 372,
+      "R-454B": 355,
+      "R-32": 384,
+      "R-407C": 230
+    },
+    "at_120F_condenser": {
+      "R-22": 260,
+      "R-410A": 434,
+      "R-454B": 413,
+      "R-32": 447,
+      "R-407C": 264
+    },
+    "at_130F_condenser": {
+      "R-22": 296,
+      "R-410A": 502,
+      "R-454B": 478,
+      "R-32": 518,
+      "R-407C": 301
+    },
+    "notes": [
+      "R-410A operates at approximately 50-60% higher pressures than R-22",
+      "R-454B operates at approximately 3-5% lower pressures than R-410A",
+      "R-32 operates at approximately 3-5% higher pressures than R-410A",
+      "R-407C operates at nearly identical pressures to R-22",
+      "R-407C has temperature glide — use midpoint (bubble + dew / 2) for calculations",
+      "Always use manufacturer PT chart for exact values — this is a field reference"
+    ]
+  }
+}

@@ -1,0 +1,410 @@
+{
+  "_metadata": {
+    "description": "HVAC quick reference data for field technicians",
+    "last_reviewed": "2026-03",
+    "disclaimer": "Always verify with manufacturer specifications. Values are typical ranges."
+  },
+  "superheat_targets": {
+    "description": "Target superheat ranges by metering device type",
+    "fixed_orifice_piston": {
+      "method": "Use superheat charging chart (outdoor ambient temp vs indoor wet bulb)",
+      "typical_range_F": "10-25",
+      "notes": [
+        "Superheat varies by outdoor ambient and indoor wet bulb - always use charging chart",
+        "Lower ambient = higher target superheat",
+        "Higher ambient = lower target superheat",
+        "Below 65F outdoor ambient, superheat method becomes unreliable - use weigh-in method",
+        "Fixed orifice systems: superheat is the PRIMARY charging indicator"
+      ],
+      "charging_chart_reference": {
+        "description": "Approximate target superheat by outdoor temp and indoor wet bulb",
+        "75F_outdoor_62WB": 20,
+        "75F_outdoor_67WB": 14,
+        "85F_outdoor_62WB": 17,
+        "85F_outdoor_67WB": 10,
+        "95F_outdoor_62WB": 12,
+        "95F_outdoor_67WB": 5,
+        "95F_outdoor_72WB": 3,
+        "note": "These are approximations - use manufacturer chart for exact values"
+      }
+    },
+    "txv_systems": {
+      "target_superheat_F": "8-12",
+      "ideal_F": 10,
+      "notes": [
+        "TXV controls superheat - should remain relatively constant regardless of load",
+        "Superheat significantly outside 8-12F range indicates TXV issue, not charge issue",
+        "Use subcooling as the PRIMARY charging indicator on TXV systems",
+        "High superheat with TXV: check TXV bulb placement, insulation, or stuck valve",
+        "Low superheat with TXV: check for overcharge, TXV stuck open, or flooded evaporator"
+      ]
+    },
+    "electronic_expansion_valve": {
+      "target_superheat_F": "4-10",
+      "notes": [
+        "EEV adjusts dynamically - tighter superheat control than TXV",
+        "Variable speed systems typically target lower superheat",
+        "Superheat controlled by system controller, not just valve",
+        "Refer to manufacturer specs for specific EEV superheat targets"
+      ]
+    }
+  },
+  "subcooling_targets": {
+    "description": "Target subcooling ranges by system type",
+    "txv_systems": {
+      "target_subcooling_F": "8-14",
+      "ideal_F": "10-12",
+      "notes": [
+        "Subcooling is the PRIMARY charging method for TXV systems",
+        "Low subcooling = undercharged (or restriction before condenser outlet)",
+        "High subcooling = overcharged (or airflow issue over condenser)",
+        "Always verify condenser is clean and outdoor fan is running before adjusting charge",
+        "Subcooling changes approximately 2-3F per pound of refrigerant in residential systems"
+      ]
+    },
+    "fixed_orifice_piston": {
+      "typical_subcooling_F": "10-20",
+      "notes": [
+        "Subcooling is NOT the primary charging method for fixed orifice - use superheat",
+        "Subcooling is more variable on fixed orifice systems",
+        "Can be used as a secondary reference point"
+      ]
+    },
+    "heat_pump_heating_mode": {
+      "target_subcooling_F": "5-10",
+      "notes": [
+        "In heating mode, the indoor coil is the condenser",
+        "Subcooling measured at indoor coil liquid line",
+        "Lower subcooling targets in heating mode are normal"
+      ]
+    }
+  },
+  "motor_winding_resistance": {
+    "description": "Typical motor winding resistance ranges by horsepower (single phase PSC motors, 230V)",
+    "unit": "ohms",
+    "notes": [
+      "Measure C-R (common to run), C-S (common to start), and R-S (run to start)",
+      "R-S should approximately equal C-R + C-S",
+      "Infinite reading (OL) = open winding",
+      "Zero or near-zero reading = shorted winding",
+      "Any reading to ground = grounded winding (failed motor)",
+      "Values vary by manufacturer - these are typical ranges for reference"
+    ],
+    "single_phase_psc_230v": {
+      "1_6_HP": {
+        "common_to_run": "15-35",
+        "common_to_start": "30-70"
+      },
+      "1_4_HP": {
+        "common_to_run": "10-25",
+        "common_to_start": "25-55"
+      },
+      "1_3_HP": {
+        "common_to_run": "6-18",
+        "common_to_start": "18-40"
+      },
+      "1_2_HP": {
+        "common_to_run": "4-12",
+        "common_to_start": "12-30"
+      },
+      "3_4_HP": {
+        "common_to_run": "3-8",
+        "common_to_start": "8-20"
+      },
+      "1_HP": {
+        "common_to_run": "2-6",
+        "common_to_start": "5-15"
+      }
+    },
+    "compressor_windings_single_phase": {
+      "note": "Compressor winding resistance is very low - use a quality ohmmeter",
+      "small_residential_1_to_3_ton": {
+        "common_to_run": "1-5",
+        "common_to_start": "3-12"
+      },
+      "medium_residential_3_to_5_ton": {
+        "common_to_run": "0.5-3",
+        "common_to_start": "2-8"
+      },
+      "note2": "Always compare measured values to manufacturer data on compressor nameplate or spec sheet"
+    },
+    "three_phase_motors": {
+      "note": "All three windings (T1-T2, T2-T3, T1-T3) should read within 5% of each other",
+      "1_HP_230V": "3-8",
+      "2_HP_230V": "2-5",
+      "3_HP_230V": "1.5-3.5",
+      "5_HP_230V": "1-2.5",
+      "7_5_HP_230V": "0.5-1.5",
+      "10_HP_230V": "0.3-1.0"
+    }
+  },
+  "capacitor_testing": {
+    "description": "Capacitor tolerance and testing guidelines",
+    "tolerance_standard": "+/-6% of rated microfarads (uF)",
+    "pass_fail_rule": "If measured uF is within +/-6% of rated value, capacitor passes. Outside +/-6% = replace.",
+    "examples": [
+      {
+        "rated_uf": 5,
+        "min_pass": 4.7,
+        "max_pass": 5.3,
+        "note": "5 uF +/-6% = 4.7 to 5.3 uF (common fan motor cap)"
+      },
+      {
+        "rated_uf": 7.5,
+        "min_pass": 7.05,
+        "max_pass": 7.95,
+        "note": "7.5 uF +/-6% = 7.05 to 7.95 uF"
+      },
+      {
+        "rated_uf": 10,
+        "min_pass": 9.4,
+        "max_pass": 10.6,
+        "note": "10 uF +/-6% = 9.4 to 10.6 uF"
+      },
+      {
+        "rated_uf": 25,
+        "min_pass": 23.5,
+        "max_pass": 26.5,
+        "note": "25 uF +/-6% = 23.5 to 26.5 uF"
+      },
+      {
+        "rated_uf": 35,
+        "min_pass": 32.9,
+        "max_pass": 37.1,
+        "note": "35 uF +/-6% = 32.9 to 37.1 uF"
+      },
+      {
+        "rated_uf": 40,
+        "min_pass": 37.6,
+        "max_pass": 42.4,
+        "note": "40 uF +/-6% = 37.6 to 42.4 uF"
+      },
+      {
+        "rated_uf": 45,
+        "min_pass": 42.3,
+        "max_pass": 47.7,
+        "note": "45 uF +/-6% = 42.3 to 47.7 uF"
+      },
+      {
+        "rated_uf": 50,
+        "min_pass": 47,
+        "max_pass": 53,
+        "note": "50 uF +/-6% = 47.0 to 53.0 uF"
+      },
+      {
+        "rated_uf": 60,
+        "min_pass": 56.4,
+        "max_pass": 63.6,
+        "note": "60 uF +/-6% = 56.4 to 63.6 uF"
+      },
+      {
+        "rated_uf": 70,
+        "min_pass": 65.8,
+        "max_pass": 74.2,
+        "note": "70 uF +/-6% = 65.8 to 74.2 uF (common on larger compressors)"
+      },
+      {
+        "rated_uf": 80,
+        "min_pass": 75.2,
+        "max_pass": 84.8,
+        "note": "80 uF +/-6% = 75.2 to 84.8 uF"
+      }
+    ],
+    "dual_run_capacitors": {
+      "description": "Dual run capacitors have two sections - test each independently",
+      "common_ratings": [
+        "35/5 uF (compressor/fan)",
+        "40/5 uF",
+        "45/5 uF",
+        "45/7.5 uF",
+        "50/5 uF",
+        "55/5 uF",
+        "60/5 uF",
+        "60/7.5 uF",
+        "70/5 uF",
+        "80/5 uF",
+        "80/7.5 uF"
+      ],
+      "terminals": {
+        "C": "Common (connects to both sections)",
+        "HERM": "Compressor section",
+        "FAN": "Fan motor section"
+      },
+      "testing": "Test HERM-to-C for compressor uF, FAN-to-C for fan uF. Both must be within +/-6%."
+    },
+    "voltage_rating_notes": [
+      "Always replace with same or HIGHER voltage rating - never lower",
+      "370V cap can be replaced with 440V cap (not the reverse)",
+      "Common ratings: 370 VAC, 440 VAC",
+      "Capacitor uF must match rated value - do not upsize or downsize"
+    ],
+    "safety_warnings": [
+      "ALWAYS discharge capacitor before testing (short HERM to C and FAN to C with insulated jumper)",
+      "Capacitors can hold lethal charge even with power off",
+      "Use a 20,000 ohm 5-watt resistor for safe discharge",
+      "Never short terminals with a screwdriver - can damage capacitor or cause arc flash"
+    ]
+  },
+  "compression_ratios": {
+    "description": "Typical compression ratios by refrigerant and application",
+    "formula": "Compression Ratio = Absolute Discharge Pressure / Absolute Suction Pressure (both in psia)",
+    "psia_note": "psia = psig + 14.7 (add atmospheric pressure to gauge reading)",
+    "normal_ranges": {
+      "R-22_residential_AC": {
+        "typical_ratio": "2.5-3.5",
+        "example": "Suction 70 psig (84.7 psia), Discharge 250 psig (264.7 psia) = 3.12:1"
+      },
+      "R-410A_residential_AC": {
+        "typical_ratio": "2.5-3.5",
+        "example": "Suction 120 psig (134.7 psia), Discharge 400 psig (414.7 psia) = 3.08:1"
+      },
+      "R-454B_residential_AC": {
+        "typical_ratio": "2.5-3.5",
+        "example": "Suction 115 psig (129.7 psia), Discharge 380 psig (394.7 psia) = 3.04:1"
+      },
+      "R-22_low_temp_refrigeration": {
+        "typical_ratio": "6-10",
+        "note": "High ratios reduce volumetric efficiency - consider two-stage"
+      },
+      "R-410A_heat_pump_heating": {
+        "typical_ratio": "3.0-4.5",
+        "note": "Higher ratio than cooling due to lower suction pressure in cold weather"
+      }
+    },
+    "guidelines": [
+      "Compression ratio above 4:1 in AC applications indicates a problem",
+      "High ratio causes high discharge temp, low efficiency, compressor wear",
+      "Low suction pressure or high head pressure increases ratio",
+      "Dirty condenser, low airflow, or overcharge raises head pressure (increases ratio)",
+      "Low charge, restricted metering device, or low airflow lowers suction (increases ratio)",
+      "Maximum compression ratio for most reciprocating compressors: 10:1",
+      "Maximum compression ratio for most scroll compressors: 12:1"
+    ]
+  },
+  "amp_draw_by_tonnage": {
+    "description": "Typical full load amp (FLA) ranges by system tonnage and voltage",
+    "disclaimer": "Always check nameplate - these are approximate ranges for reference only",
+    "residential_AC_condenser_230V_single_phase": {
+      "1_5_ton": {
+        "compressor_FLA": "6-10",
+        "condenser_fan_FLA": "0.5-1.5",
+        "total_outdoor_unit_FLA": "7-12"
+      },
+      "2_ton": {
+        "compressor_FLA": "8-13",
+        "condenser_fan_FLA": "0.5-1.5",
+        "total_outdoor_unit_FLA": "9-15"
+      },
+      "2_5_ton": {
+        "compressor_FLA": "10-15",
+        "condenser_fan_FLA": "0.5-1.5",
+        "total_outdoor_unit_FLA": "11-17"
+      },
+      "3_ton": {
+        "compressor_FLA": "12-18",
+        "condenser_fan_FLA": "0.8-2.0",
+        "total_outdoor_unit_FLA": "13-20"
+      },
+      "3_5_ton": {
+        "compressor_FLA": "14-20",
+        "condenser_fan_FLA": "0.8-2.0",
+        "total_outdoor_unit_FLA": "15-22"
+      },
+      "4_ton": {
+        "compressor_FLA": "16-23",
+        "condenser_fan_FLA": "1.0-2.5",
+        "total_outdoor_unit_FLA": "17-26"
+      },
+      "5_ton": {
+        "compressor_FLA": "19-28",
+        "condenser_fan_FLA": "1.0-2.5",
+        "total_outdoor_unit_FLA": "20-31"
+      }
+    },
+    "blower_motor_indoor_unit": {
+      "1_4_HP_120V": "2.5-4.0",
+      "1_3_HP_120V": "3.5-5.5",
+      "1_2_HP_120V": "5.0-7.5",
+      "3_4_HP_120V": "7.0-10.0",
+      "1_2_HP_ECM_120V": "2.5-5.0",
+      "3_4_HP_ECM_120V": "3.0-6.5",
+      "1_HP_ECM_120V": "3.5-8.0",
+      "note": "ECM motors draw less amps than PSC motors at the same HP"
+    },
+    "locked_rotor_amps": {
+      "description": "LRA is 4-6x the FLA - if amps stay at LRA, compressor is locked",
+      "example_3_ton": "Compressor FLA 15A, LRA approximately 65-90A",
+      "note": "If amp draw stays above FLA for more than a few seconds, check start components (capacitor, relay, hard start kit)"
+    },
+    "amp_draw_troubleshooting": {
+      "high_amps_causes": [
+        "Dirty condenser coil (high head pressure)",
+        "Failed run capacitor (motor working harder)",
+        "Low voltage supply (amps increase to compensate)",
+        "Mechanical issue in compressor",
+        "Overcharged system",
+        "Non-condensables in system"
+      ],
+      "low_amps_causes": [
+        "Low refrigerant charge (compressor unloaded)",
+        "Restricted metering device",
+        "Restricted filter drier",
+        "Compressor valve failure (not pumping)"
+      ],
+      "rule_of_thumb": "Amps should be within 10% of nameplate FLA under normal operating conditions"
+    }
+  },
+  "temperature_splits": {
+    "description": "Expected temperature difference across indoor coil (return air minus supply air)",
+    "cooling_mode": {
+      "target_split_F": "16-22",
+      "ideal_F": "18-20",
+      "notes": [
+        "Measure at register closest to unit and at return",
+        "Low split: check charge, airflow, dirty coil, blower speed",
+        "High split: check airflow restriction, dirty filter, undersized ductwork",
+        "Split varies with humidity - higher latent load = lower sensible split"
+      ]
+    },
+    "heating_mode_gas": {
+      "target_rise_F": "Check nameplate rating plate - typically 35-65F",
+      "notes": [
+        "Temperature rise MUST be within range stamped on furnace rating plate",
+        "Low rise: check gas pressure, burner operation, blower speed too high",
+        "High rise: check filter, ductwork restriction, blower speed too low"
+      ]
+    },
+    "heating_mode_heat_pump": {
+      "target_split_F": "15-25",
+      "notes": [
+        "Lower output temp than gas furnace - this is normal",
+        "Split decreases as outdoor temp drops",
+        "Auxiliary/emergency heat increases split when active"
+      ]
+    }
+  },
+  "electrical_quick_reference": {
+    "ohms_law": {
+      "voltage": "V = I x R (Volts = Amps x Ohms)",
+      "current": "I = V / R (Amps = Volts / Ohms)",
+      "resistance": "R = V / I (Ohms = Volts / Amps)",
+      "power": "W = V x I (Watts = Volts x Amps)",
+      "power_3phase": "W = V x I x 1.732 x PF (three-phase)"
+    },
+    "voltage_tolerances": {
+      "120V_nominal": "108-132V (+/-10%)",
+      "208V_nominal": "187-229V (+/-10%)",
+      "230V_nominal": "207-253V (+/-10%)",
+      "240V_nominal": "216-264V (+/-10%)",
+      "460V_nominal": "414-506V (+/-10%)",
+      "note": "Measure voltage at unit disconnect under load for accuracy"
+    },
+    "common_wire_sizes_copper": {
+      "14_AWG": "15 amp circuit max",
+      "12_AWG": "20 amp circuit max",
+      "10_AWG": "30 amp circuit max",
+      "8_AWG": "40 amp circuit max",
+      "6_AWG": "55 amp circuit max"
+    }
+  }
+}
