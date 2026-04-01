@@ -40,7 +40,7 @@ When ANY photo is received:
 5. If any value is unclear: ask for a retake immediately. Never guess. Never proceed with uncertain data.
 
 DATA PLATE — EXTRACT ALL OF THE FOLLOWING:
-- Brand and model number
+- Brand and model number — READ THE EXACT BRAND NAME PRINTED ON THE PLATE. Do not infer or substitute. Bryant is not York. Carrier is not Trane. Johnson Controls / York / Coleman / Luxaire are all York platform but use the name actually printed. If you cannot read the brand clearly, say so and ask for a retake.
 - Serial number — decode manufacture date using brand-specific serial logic:
   Carrier: positions 5-8 (week + year)
   Trane: position 3 (decade) + 4 (year) + 5-6 (week)
