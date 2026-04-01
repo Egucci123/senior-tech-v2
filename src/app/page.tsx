@@ -35,33 +35,20 @@ export default function MainApp() {
 
   const isDiagnose = activeTab === "diagnose";
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "diagnose":
-        return (
-          <div className="fixed inset-0 top-0 bottom-16 z-10">
-            <ChatInterface user={user} />
-          </div>
-        );
-      case "manuals":
-        return <ManualsScreen sharedManuals={manuals} userId={user?.id} />;
-      case "history":
-        return <HistoryScreen userId={user?.id} />;
-      case "settings":
-        return <ProfileScreen />;
-      default:
-        return (
-          <div className="fixed inset-0 top-0 bottom-16 z-10">
-            <ChatInterface user={user} />
-          </div>
-        );
-    }
-  };
-
   return (
     <div className="min-h-screen">
       {!isDiagnose && <Header />}
-      <main>{renderContent()}</main>
+      <main>
+        {/* ChatInterface is ALWAYS mounted — hidden via CSS when not on diagnose tab */}
+        <div style={{ display: activeTab === "diagnose" ? "block" : "none" }} className="fixed inset-0 top-0 bottom-16 z-10">
+          <ChatInterface user={user} />
+        </div>
+
+        {/* Other tabs render normally */}
+        {activeTab === "manuals" && <ManualsScreen sharedManuals={manuals} userId={user?.id} />}
+        {activeTab === "history" && <HistoryScreen userId={user?.id} />}
+        {activeTab === "settings" && <ProfileScreen />}
+      </main>
       <BottomNav
         activeTab={activeTab}
         onTabChange={setActiveTab}

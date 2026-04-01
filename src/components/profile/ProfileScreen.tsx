@@ -255,7 +255,15 @@ export default function ProfileScreen() {
     setTimeout(() => setClearingCache(false), 1000);
   }, []);
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="px-4 pt-20 pb-24 max-w-lg mx-auto flex items-center justify-center min-h-[50vh]">
+        <span className="font-headline font-bold text-xs uppercase tracking-widest text-outline animate-pulse">
+          LOADING...
+        </span>
+      </div>
+    );
+  }
 
   const initials =
     ((user?.first_name?.[0] ?? '') + (user?.last_name?.[0] ?? '')).toUpperCase() || 'ST';
