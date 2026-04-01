@@ -58,48 +58,23 @@ export function buildManualUrls(
   model: string
 ): { type: string; url: string }[] {
   const domain = getBrandDomain(brand);
-  const m = encodeURIComponent(model);
-  const bm = encodeURIComponent(`${brand} ${model}`);
+  const base = brand ? `${brand} ${model}` : model;
 
-  if (domain) {
-    const site = `site:${domain.replace(" OR ", ` OR site:`)}`;
-    return [
-      {
-        type: "INSTALL",
-        url: `https://www.google.com/search?q=${site}+${m}+installation+manual+filetype:pdf`,
-      },
-      {
-        type: "SERVICE",
-        url: `https://www.google.com/search?q=${site}+${m}+service+manual+filetype:pdf`,
-      },
-      {
-        type: "WIRING",
-        url: `https://www.google.com/search?q=${site}+${m}+wiring+diagram+filetype:pdf`,
-      },
-      {
-        type: "PARTS",
-        url: `https://www.google.com/search?q=${site}+${m}+parts+catalog+filetype:pdf`,
-      },
-    ];
+  function makeUrl(suffix: string): string {
+    if (domain) {
+      // Build site: query — encode the whole thing properly
+      const primaryDomain = domain.split(" OR ")[0].trim();
+      const q = encodeURIComponent(`site:${primaryDomain} ${model} ${suffix}`);
+      return `https://www.google.com/search?q=${q}`;
+    }
+    const q = encodeURIComponent(`${base} ${suffix}`);
+    return `https://www.google.com/search?q=${q}`;
   }
 
-  // Fallback: general Google PDF search
   return [
-    {
-      type: "INSTALL",
-      url: `https://www.google.com/search?q=${bm}+installation+manual+filetype:pdf`,
-    },
-    {
-      type: "SERVICE",
-      url: `https://www.google.com/search?q=${bm}+service+manual+filetype:pdf`,
-    },
-    {
-      type: "WIRING",
-      url: `https://www.google.com/search?q=${bm}+wiring+diagram+filetype:pdf`,
-    },
-    {
-      type: "PARTS",
-      url: `https://www.google.com/search?q=${bm}+parts+catalog+filetype:pdf`,
-    },
+    { type: "INSTALL", url: makeUrl("installation manual filetype:pdf") },
+    { type: "SERVICE", url: makeUrl("service manual filetype:pdf") },
+    { type: "WIRING", url: makeUrl("wiring diagram filetype:pdf") },
+    { type: "PARTS",  url: makeUrl("parts catalog filetype:pdf") },
   ];
 }
