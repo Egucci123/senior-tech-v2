@@ -269,13 +269,12 @@ export function useChat(user: User | null): UseChatReturn {
           }));
 
           /* Auto-populate manuals via shared store */
-          const qBrand = encodeURIComponent(extractedBrand).replace(/%20/g, "+");
-          const qModel = encodeURIComponent(extractedModel).replace(/%20/g, "+");
+          const gq = encodeURIComponent(`${extractedBrand} ${extractedModel}`);
           const manualUrls = [
-            { type: "INSTALL", url: `https://www.manualslib.com/search/?q=${qBrand}+${qModel}+installation+manual&p=1` },
-            { type: "SERVICE", url: `https://www.manualslib.com/search/?q=${qBrand}+${qModel}+service+manual&p=1` },
-            { type: "WIRING", url: `https://www.manualslib.com/search/?q=${qBrand}+${qModel}+wiring+diagram&p=1` },
-            { type: "PARTS", url: `https://www.manualslib.com/search/?q=${qModel}+parts+catalog&p=1` },
+            { type: "INSTALL", url: `https://www.google.com/search?q=${gq}+installation+manual+filetype:pdf` },
+            { type: "SERVICE", url: `https://www.google.com/search?q=${gq}+service+manual+filetype:pdf` },
+            { type: "WIRING", url: `https://www.google.com/search?q=${gq}+wiring+diagram+filetype:pdf` },
+            { type: "PARTS", url: `https://www.google.com/search?q=${gq}+parts+catalog+filetype:pdf` },
           ];
 
           addManual({

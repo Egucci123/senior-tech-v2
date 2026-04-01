@@ -59,13 +59,13 @@ export default function ManualsScreen({ sharedManuals = [], userId }: ManualsScr
       return;
     }
 
-    // Create a new manual search entry with ManualsLib URLs
-    const q = encodeURIComponent(query).replace(/%20/g, "+");
+    // Create a new manual search entry with Google search URLs
+    const gq = encodeURIComponent(query);
     const manualUrls = [
-      { type: "INSTALL", url: `https://www.manualslib.com/search/?q=${q}+installation+manual&p=1` },
-      { type: "SERVICE", url: `https://www.manualslib.com/search/?q=${q}+service+manual&p=1` },
-      { type: "WIRING", url: `https://www.manualslib.com/search/?q=${q}+wiring+diagram&p=1` },
-      { type: "PARTS", url: `https://www.manualslib.com/search/?q=${q}+parts+catalog&p=1` },
+      { type: "INSTALL", url: `https://www.google.com/search?q=${gq}+installation+manual+filetype:pdf` },
+      { type: "SERVICE", url: `https://www.google.com/search?q=${gq}+service+manual+filetype:pdf` },
+      { type: "WIRING", url: `https://www.google.com/search?q=${gq}+wiring+diagram+filetype:pdf` },
+      { type: "PARTS", url: `https://www.google.com/search?q=${gq}+parts+catalog+filetype:pdf` },
     ];
 
     const newManual: ManualSearch = {
