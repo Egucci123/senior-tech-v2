@@ -62,10 +62,10 @@ export default function ManualsScreen({ sharedManuals = [], userId }: ManualsScr
     // Create a new manual search entry with ManualsLib URLs
     const q = encodeURIComponent(query);
     const manualUrls = [
-      { type: "INSTALL", url: `https://www.manualslib.com/search/?q=${q}+installation+manual` },
-      { type: "SERVICE", url: `https://www.manualslib.com/search/?q=${q}+service+manual` },
-      { type: "WIRING", url: `https://www.manualslib.com/search/?q=${q}+wiring+diagram` },
-      { type: "PARTS", url: `https://www.manualslib.com/search/?q=${q}+parts+list` },
+      { type: "INSTALL", url: `https://www.manualslib.com/search/?q=${q}+installation+manual&p=1` },
+      { type: "SERVICE", url: `https://www.manualslib.com/search/?q=${q}+service+manual&p=1` },
+      { type: "WIRING", url: `https://www.manualslib.com/search/?q=${q}+wiring+diagram&p=1` },
+      { type: "PARTS", url: `https://www.manualslib.com/search/?q=${q}+parts+catalog&p=1` },
     ];
 
     const newManual: ManualSearch = {

@@ -15,7 +15,7 @@ const MODEL_SONNET = "claude-sonnet-4-5"; // photos + complex turns
 const MODEL_HAIKU = "claude-haiku-4-5";   // simple turns 1-3
 
 const MAX_TOKENS: Record<string, number> = {
-  photo: 1500,
+  photo: 800,
   complex: 800,
   simple: 300,
 };
