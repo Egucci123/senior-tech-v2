@@ -168,7 +168,7 @@ export function useChat(user: User | null): UseChatReturn {
 
       /* Prepare last 4 messages for context window */
       const recentMessages = [...messages, userMsg]
-        .slice(-20)
+        .slice(-40)
         .map((m) => ({
           role: m.role,
           content: m.content,
