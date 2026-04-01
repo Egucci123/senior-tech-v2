@@ -5,6 +5,7 @@ import { Search, ExternalLink, Zap } from "lucide-react";
 import type { ManualSearch } from "@/types";
 import { getManualSearches, createManualSearch } from "@/lib/supabase";
 import ManualCard from "./ManualCard";
+import { buildManualUrls } from "@/lib/manual-links";
 
 interface ManualsScreenProps {
   sharedManuals?: ManualSearch[];
@@ -59,14 +60,8 @@ export default function ManualsScreen({ sharedManuals = [], userId }: ManualsScr
       return;
     }
 
-    // Create a new manual search entry with Google search URLs
-    const gq = encodeURIComponent(query);
-    const manualUrls = [
-      { type: "INSTALL", url: `https://www.google.com/search?q=${gq}+installation+manual+filetype:pdf` },
-      { type: "SERVICE", url: `https://www.google.com/search?q=${gq}+service+manual+filetype:pdf` },
-      { type: "WIRING", url: `https://www.google.com/search?q=${gq}+wiring+diagram+filetype:pdf` },
-      { type: "PARTS", url: `https://www.google.com/search?q=${gq}+parts+catalog+filetype:pdf` },
-    ];
+    // Build smart manual URLs using brand-aware domain targeting
+    const manualUrls = buildManualUrls("", query);
 
     const newManual: ManualSearch = {
       id: crypto.randomUUID(),

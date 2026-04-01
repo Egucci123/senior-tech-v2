@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import type { ChatMessage, SessionState, User } from "@/types";
 import { addManual } from "./useManuals";
+import { buildManualUrls } from "@/lib/manual-links";
 import {
   createDiagnosticSession,
   updateDiagnosticSession,
@@ -269,13 +270,7 @@ export function useChat(user: User | null): UseChatReturn {
           }));
 
           /* Auto-populate manuals via shared store */
-          const gq = encodeURIComponent(`${extractedBrand} ${extractedModel}`);
-          const manualUrls = [
-            { type: "INSTALL", url: `https://www.google.com/search?q=${gq}+installation+manual+filetype:pdf` },
-            { type: "SERVICE", url: `https://www.google.com/search?q=${gq}+service+manual+filetype:pdf` },
-            { type: "WIRING", url: `https://www.google.com/search?q=${gq}+wiring+diagram+filetype:pdf` },
-            { type: "PARTS", url: `https://www.google.com/search?q=${gq}+parts+catalog+filetype:pdf` },
-          ];
+          const manualUrls = buildManualUrls(extractedBrand, extractedModel);
 
           addManual({
             id: crypto.randomUUID(),
