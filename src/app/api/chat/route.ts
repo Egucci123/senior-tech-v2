@@ -11,8 +11,8 @@ const supabaseAdmin = createClient(
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 
-const MODEL_SONNET = "claude-sonnet-4-5";
-const MODEL_HAIKU = "claude-haiku-4-5";
+const MODEL_SONNET = "claude-sonnet-4-5"; // photos + complex turns
+const MODEL_HAIKU = "claude-haiku-4-5";   // simple turns 1-3
 
 const MAX_TOKENS: Record<string, number> = {
   photo: 1500,

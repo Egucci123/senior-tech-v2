@@ -202,8 +202,7 @@ export function useChat(user: User | null): UseChatReturn {
         });
 
         if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(`Chat API error: ${res.status} — ${errText}`);
+          throw new Error(`Chat API error: ${res.status}`);
         }
 
         /* Stream the response */
@@ -344,7 +343,7 @@ export function useChat(user: User | null): UseChatReturn {
         const errorMsg: ChatMessage = {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: error instanceof Error ? `ERROR: ${error.message}` : "CONNECTION LOST. Check signal and retry.",
+          content: "CONNECTION LOST. Check signal and retry. If the issue persists, describe your situation again.",
           timestamp: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, errorMsg]);
