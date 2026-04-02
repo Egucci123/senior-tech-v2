@@ -158,7 +158,13 @@ export default function HistoryScreen({ userId, onResumeSession }: HistoryScreen
     return (
       <div className="px-4 pt-20 pb-24 max-w-lg mx-auto">
         <div className="text-center py-12">
-          <p className="text-outline text-sm">Sign in to view your diagnostic history.</p>
+          <p className="text-outline text-sm mb-4">Sign in to view your diagnostic history.</p>
+          <a
+            href="/onboarding"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-primary-container/10 border border-primary-container/30 font-headline font-bold text-xs uppercase tracking-wide text-primary-container transition-all hover:bg-primary-container/20"
+          >
+            Sign In
+          </a>
         </div>
       </div>
     );
@@ -199,7 +205,7 @@ export default function HistoryScreen({ userId, onResumeSession }: HistoryScreen
           {(fetchError || sessions.length === 0) && (
             <div className="text-center py-12">
               <p className="text-outline text-sm">No diagnostic history yet.</p>
-              <p className="text-outline/60 text-xs mt-1">
+              <p className="text-outline/80 text-xs mt-1">
                 Complete a diagnostic session — it will appear here automatically.
               </p>
             </div>

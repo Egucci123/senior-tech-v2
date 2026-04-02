@@ -44,7 +44,7 @@ export default function QuickRefTables() {
                 <p className="font-body text-sm text-on-surface">{quickRef.subcooling_targets.fixed_orifice_piston.typical_subcooling_F}{'\u00b0F'}</p>
               </div>
             </div>
-            <p className="text-[10px] text-outline/60 font-body">Superheat is primary charging method. Use charging chart.</p>
+            <p className="text-[10px] text-outline/80 font-body">Superheat is primary charging method. Use charging chart.</p>
           </div>
           {/* TXV */}
           <div className="bg-[#0e0e0e] rounded-lg p-3">
@@ -59,7 +59,7 @@ export default function QuickRefTables() {
                 <p className="font-body text-sm text-on-surface">{quickRef.subcooling_targets.txv_systems.target_subcooling_F}{'\u00b0F'}</p>
               </div>
             </div>
-            <p className="text-[10px] text-outline/60 font-body">Subcooling is primary charging method. TXV controls superheat.</p>
+            <p className="text-[10px] text-outline/80 font-body">Subcooling is primary charging method. TXV controls superheat.</p>
           </div>
           {/* Heat Pump */}
           <div className="bg-[#0e0e0e] rounded-lg p-3">
@@ -74,7 +74,7 @@ export default function QuickRefTables() {
                 <p className="font-body text-sm text-on-surface">{quickRef.subcooling_targets.heat_pump_heating_mode.target_subcooling_F}{'\u00b0F'}</p>
               </div>
             </div>
-            <p className="text-[10px] text-outline/60 font-body">Measured at indoor coil (condenser in heating). Lower SC targets are normal.</p>
+            <p className="text-[10px] text-outline/80 font-body">Measured at indoor coil (condenser in heating). Lower SC targets are normal.</p>
           </div>
         </div>
       </Section>
@@ -103,7 +103,7 @@ export default function QuickRefTables() {
               })}
             </tbody>
           </table>
-          <p className="text-[10px] text-outline/50 font-body px-3 mt-2">
+          <p className="text-[10px] text-outline/70 font-body px-3 mt-2">
             Infinity = open winding. Zero = shorted. Any reading to ground = grounded motor.
           </p>
         </div>
@@ -130,7 +130,7 @@ export default function QuickRefTables() {
               ))}
             </tbody>
           </table>
-          <p className="text-[10px] text-outline/50 font-body px-3 mt-2">
+          <p className="text-[10px] text-outline/70 font-body px-3 mt-2">
             Always discharge capacitor before testing. Replace if outside range.
           </p>
         </div>
@@ -150,12 +150,12 @@ export default function QuickRefTables() {
                   <span className="font-headline text-sm text-emerald-400">{ratio}</span>
                 </div>
                 {example && (
-                  <p className="text-[10px] text-outline/60 font-body">{example}</p>
+                  <p className="text-[10px] text-outline/80 font-body">{example}</p>
                 )}
               </div>
             );
           })}
-          <p className="text-[10px] text-outline/50 font-body mt-2">
+          <p className="text-[10px] text-outline/70 font-body mt-2">
             CR = (Discharge psig + 14.7) / (Suction psig + 14.7). Above 4:1 in AC indicates a problem.
           </p>
         </div>
@@ -185,7 +185,7 @@ export default function QuickRefTables() {
               })}
             </tbody>
           </table>
-          <p className="text-[10px] text-outline/50 font-body px-3 mt-2">
+          <p className="text-[10px] text-outline/70 font-body px-3 mt-2">
             Always check nameplate. Running above FLA indicates overload. Low voltage increases amp draw.
           </p>
         </div>

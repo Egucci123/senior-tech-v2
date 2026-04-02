@@ -182,14 +182,14 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
               placeholder="New password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="h-10 px-3 rounded-lg bg-surface-container border border-outline-variant text-sm text-on-surface placeholder:text-outline/50 focus:outline-none focus:border-primary-container"
+              className="h-10 px-3 rounded-lg bg-surface-container border border-outline-variant text-sm text-on-surface placeholder:text-outline/70 focus:outline-none focus:border-primary-container"
             />
             <input
               type="password"
               placeholder="Confirm password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="h-10 px-3 rounded-lg bg-surface-container border border-outline-variant text-sm text-on-surface placeholder:text-outline/50 focus:outline-none focus:border-primary-container"
+              className="h-10 px-3 rounded-lg bg-surface-container border border-outline-variant text-sm text-on-surface placeholder:text-outline/70 focus:outline-none focus:border-primary-container"
             />
             {error && (
               <p className="font-body text-xs text-error">{error}</p>
@@ -226,6 +226,7 @@ export default function ProfileScreen({ user, session, signOut }: ProfileScreenP
   const [biometric, setBiometric] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [clearingCache, setClearingCache] = useState(false);
+  const [confirmWipe, setConfirmWipe] = useState(false);
 
   const handleSignOut = useCallback(async () => {
     await signOut();
@@ -403,11 +404,34 @@ export default function ProfileScreen({ user, session, signOut }: ProfileScreenP
           icon={Trash2}
           label="Wipe History & Cache"
           sub="Clears all sessions, manuals, and local data"
-          onClick={handleClearCache}
           right={
-            <span className="font-headline font-bold text-xs uppercase tracking-wider text-primary-container">
-              {clearingCache ? 'WIPED' : 'WIPE'}
-            </span>
+            confirmWipe ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setConfirmWipe(false); }}
+                  className="px-2.5 py-1 rounded-lg bg-surface-container-high border border-outline-variant font-headline font-bold text-[10px] uppercase tracking-wider text-outline"
+                >
+                  CANCEL
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmWipe(false);
+                    handleClearCache();
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-error/10 border border-error/50 font-headline font-bold text-[10px] uppercase tracking-wider text-error"
+                >
+                  CONFIRM WIPE
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={(e) => { e.stopPropagation(); setConfirmWipe(true); }}
+                className="font-headline font-bold text-xs uppercase tracking-wider text-primary-container"
+              >
+                {clearingCache ? 'WIPED' : 'WIPE'}
+              </button>
+            )
           }
         />
       </div>
@@ -507,7 +531,7 @@ export default function ProfileScreen({ user, session, signOut }: ProfileScreenP
       </div>
 
       <div className="text-center pb-4">
-        <p className="font-headline text-[10px] uppercase tracking-[0.25em] text-outline/50">
+        <p className="font-headline text-[10px] uppercase tracking-[0.25em] text-outline/70">
           FIRMWARE V.4.8.2-A
         </p>
         <p className="font-headline text-[9px] uppercase tracking-[0.2em] text-outline/30 mt-1">

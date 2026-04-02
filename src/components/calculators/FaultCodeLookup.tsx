@@ -82,7 +82,7 @@ export default function FaultCodeLookup() {
             <option key={b} value={b}>{b}</option>
           ))}
         </select>
-        <p className="text-[10px] text-outline/60 mt-1 font-body">
+        <p className="text-[10px] text-outline/80 mt-1 font-body">
           {Object.keys(allCodes).length} codes available
         </p>
       </div>
@@ -165,7 +165,7 @@ export default function FaultCodeLookup() {
                   <Cpu className="w-4 h-4" />
                   AI Lookup
                 </button>
-                <p className="text-[10px] text-outline/60 font-body">
+                <p className="text-[10px] text-outline/80 font-body">
                   Sends code to AI for identification (requires network)
                 </p>
               </div>

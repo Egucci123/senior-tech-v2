@@ -101,12 +101,12 @@ export default function PTChartLookup() {
             transition-all placeholder:text-outline/40"
         />
         {mode === 'pressure_to_temp' && pressureRange && (
-          <p className="text-[10px] text-outline/60 mt-1 font-body">
+          <p className="text-[10px] text-outline/80 mt-1 font-body">
             Range: {pressureRange.min}\u2013{pressureRange.max} psig
           </p>
         )}
         {mode === 'temp_to_pressure' && tempRange && (
-          <p className="text-[10px] text-outline/60 mt-1 font-body">
+          <p className="text-[10px] text-outline/80 mt-1 font-body">
             Range: {tempRange.min}\u2013{tempRange.max}\u00b0F
           </p>
         )}

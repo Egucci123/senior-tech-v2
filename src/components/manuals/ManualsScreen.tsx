@@ -140,7 +140,12 @@ export default function ManualsScreen({ sharedManuals = [], userId }: ManualsScr
             }}
             onKeyDown={handleKeyDown}
             placeholder="Enter model number..."
-            className="w-full h-11 pl-4 pr-4 rounded-lg bg-surface-container border border-outline-variant text-sm text-on-surface placeholder:text-outline/50 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container/30 transition-colors font-body"
+            autoCorrect="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            autoComplete="off"
+            inputMode="text"
+            className="w-full h-11 pl-4 pr-4 rounded-lg bg-surface-container border border-outline-variant text-sm text-on-surface placeholder:text-outline/70 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container/30 transition-colors font-body"
           />
         </div>
         <button
@@ -190,7 +195,7 @@ export default function ManualsScreen({ sharedManuals = [], userId }: ManualsScr
         {allManuals.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-outline text-sm">No manuals yet.</p>
-            <p className="text-outline/60 text-xs mt-1">
+            <p className="text-outline/80 text-xs mt-1">
               Upload a data plate photo in DIAGNOSE — manuals are found automatically.
             </p>
           </div>

@@ -20,7 +20,7 @@ function inferSource(url: string): 1 | 2 | 3 {
 const SOURCE_LABELS: Record<1 | 2 | 3, { label: string; color: string }> = {
   1: { label: "OEM PDF",      color: "text-[#69cc69]" },
   2: { label: "ManualsLib",   color: "text-[#4fc3f7]" },
-  3: { label: "Search",       color: "text-outline/50" },
+  3: { label: "Search",       color: "text-outline/70" },
 };
 
 function formatSearchDate(iso: string): string {
@@ -72,7 +72,7 @@ export default function ManualCard({ manual, onDelete }: ManualCardProps) {
           {srcInfo.label}
         </span>
         <span className="text-outline/30 text-[9px]">·</span>
-        <span className="text-[10px] text-outline/60 font-headline uppercase tracking-wide">
+        <span className="text-[10px] text-outline/80 font-headline uppercase tracking-wide">
           {formatSearchDate(manual.search_date)}
         </span>
       </div>

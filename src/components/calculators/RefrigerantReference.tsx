@@ -184,7 +184,7 @@ export default function RefrigerantReference() {
               })}
             </tbody>
           </table>
-          <p className="text-[10px] text-outline/50 font-body px-3 mt-2">
+          <p className="text-[10px] text-outline/70 font-body px-3 mt-2">
             Pressures in psig. R-410A runs ~50-60% higher than R-22.
           </p>
         </div>

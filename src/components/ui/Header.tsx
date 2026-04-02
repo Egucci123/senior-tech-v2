@@ -20,7 +20,7 @@ export default function Header() {
 
       {/* Right: Notification */}
       <button
-        className="relative p-2 rounded-lg hover:bg-white/5 transition-colors"
+        className="relative p-2 rounded-lg hover:bg-white/5 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
         aria-label="Notifications"
       >
         <Bell className="w-5 h-5 text-outline" />

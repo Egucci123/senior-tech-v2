@@ -233,7 +233,8 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg
                      bg-surface-container-high border border-outline-variant/20
                      font-headline font-bold text-[10px] uppercase tracking-wider text-primary
-                     hover:border-primary-container/40 transition-colors"
+                     hover:border-primary-container/40 transition-colors
+                     min-h-[44px] flex items-center"
           aria-label="New Diagnostic"
         >
           <RotateCcw className="w-3 h-3" />
@@ -327,7 +328,7 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
             className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg
                        bg-surface-container-high font-headline font-bold text-[10px]
                        uppercase tracking-wider text-outline
-                       hover:text-on-surface transition-colors"
+                       hover:text-on-surface transition-colors min-h-[44px]"
             aria-label="Attach photo"
           >
             <Camera className="w-4 h-4" />
@@ -341,7 +342,7 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
                        bg-surface-container-high font-headline font-bold text-[10px]
                        uppercase tracking-wider text-outline
                        hover:text-on-surface transition-colors
-                       disabled:opacity-40 disabled:cursor-not-allowed"
+                       disabled:opacity-40 disabled:cursor-not-allowed min-h-[44px]"
             aria-label="Summarize diagnostic"
           >
             {summaryLoading ? (
@@ -368,10 +369,14 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="DESCRIBE THE ISSUE..."
+            autoCorrect="off"
+            autoCapitalize="sentences"
+            spellCheck={false}
+            autoComplete="off"
             className="flex-1 bg-surface-container-low border border-outline-variant rounded-lg
                        px-4 py-3 font-body text-sm text-on-surface
                        placeholder:font-headline placeholder:font-bold placeholder:text-[11px]
-                       placeholder:uppercase placeholder:tracking-wider placeholder:text-outline/50
+                       placeholder:uppercase placeholder:tracking-wider placeholder:text-outline/70
                        focus:outline-none focus:border-primary-container transition-colors"
           />
           <button

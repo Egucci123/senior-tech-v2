@@ -88,7 +88,7 @@ export default function VoiceInput({ onTranscript }: VoiceInputProps) {
       onClick={toggleRecording}
       className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg
                   font-headline font-bold text-[10px] uppercase tracking-wider
-                  transition-all duration-200 ${
+                  transition-all duration-200 min-h-[44px] ${
                     isRecording
                       ? "bg-red-500/20 text-red-400 border border-red-500/40"
                       : "bg-surface-container-high text-outline hover:text-on-surface border border-transparent"

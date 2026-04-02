@@ -92,7 +92,7 @@ export default function SessionDetail({ session, onBack, onResume }: SessionDeta
                   <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
                     {msg.content}
                   </p>
-                  <span className="block text-right text-[10px] text-outline/60 mt-1.5 font-headline uppercase">
+                  <span className="block text-right text-[10px] text-outline/80 mt-1.5 font-headline uppercase">
                     {formatTimestamp(msg.timestamp)}
                   </span>
                 </div>

@@ -165,7 +165,7 @@ export default function QuickReferenceDrawer() {
             </h2>
             <button
               onClick={() => setIsOpen(false)}
-              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors"
               aria-label="Close drawer"
             >
               <X className="w-4 h-4 text-outline" />
@@ -180,7 +180,7 @@ export default function QuickReferenceDrawer() {
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className={`flex-shrink-0 px-3 py-2 font-headline text-[11px] uppercase tracking-wider
-                    border-b-2 transition-colors whitespace-nowrap ${
+                    border-b-2 transition-colors whitespace-nowrap min-h-[44px] ${
                     activeTab === tab.key
                       ? 'text-primary-container border-primary-container'
                       : 'text-outline border-transparent hover:text-on-surface hover:border-outline-variant'
