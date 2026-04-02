@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { ManualSearch } from "@/types";
 import { getManualSearches, createManualSearch } from "@/lib/supabase";
+import { isSameModel, getBaseModel } from "@/lib/model-utils";
 
 /**
  * Module-level store for manuals shared between chat and manuals screen.
@@ -24,11 +25,9 @@ export async function loadFromDb(userId: string) {
     const { data, error } = await getManualSearches(userId);
     if (!error && data) {
       const dbManuals = data as ManualSearch[];
-      // Merge DB manuals with in-memory ones, avoiding duplicates by model_number
+      // Merge DB manuals with in-memory ones, avoiding duplicates by model identity
       for (const dbManual of dbManuals) {
-        const exists = _manuals.some(
-          (m) => m.model_number.toLowerCase() === dbManual.model_number.toLowerCase()
-        );
+        const exists = _manuals.some((m) => isSameModel(m.model_number, dbManual.model_number));
         if (!exists) {
           _manuals.push(dbManual);
         }
@@ -43,18 +42,21 @@ export async function loadFromDb(userId: string) {
 
 /** Called from useChat when a model number is extracted from AI response */
 export function addManual(manual: ManualSearch, userId?: string) {
-  // Avoid duplicates by model_number (case-insensitive)
-  const exists = _manuals.some(
-    (m) => m.model_number.toLowerCase() === manual.model_number.toLowerCase()
-  );
+  // Normalize to base model before storing — prevents ZE060H12A2A1ABA1A2 vs ZE060 duplicates
+  const normalizedManual = {
+    ...manual,
+    model_number: getBaseModel(manual.model_number),
+  };
+  // Avoid duplicates — full config strings and base models are the same unit
+  const exists = _manuals.some((m) => isSameModel(m.model_number, normalizedManual.model_number));
   if (!exists) {
-    _manuals = [manual, ..._manuals];
+    _manuals = [normalizedManual, ..._manuals];
     _hasNew = true;
     notify();
 
     // Persist to DB (fire-and-forget) if userId available
     if (userId) {
-      createManualSearch(userId, manual.model_number, manual.brand, manual.manual_urls)
+      createManualSearch(userId, normalizedManual.model_number, normalizedManual.brand, normalizedManual.manual_urls)
         .then(() => {})
         .catch((e) => console.error("Failed to persist manual search:", e));
     }

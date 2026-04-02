@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import type { ChatMessage, SessionState, User } from "@/types";
 import { addManual } from "./useManuals";
 import { buildManualUrls } from "@/lib/manual-links";
+import { getBaseModel } from "@/lib/model-utils";
 import {
   createDiagnosticSession,
   updateDiagnosticSession,
@@ -261,17 +262,17 @@ export function useChat(user: User | null): UseChatReturn {
             /* Push real Brave-found manuals to Manuals tab */
             const manualUrls = braveManuals.map((m) => ({ type: m.type, url: m.url }));
             const brandFromState = sessionState?.equipment?.brand || "";
-            const modelFromState = sessionState?.equipment?.model || "";
+            const baseModelFromState = getBaseModel(sessionState?.equipment?.model || "");
             addManual({
               id: crypto.randomUUID(),
               user_id: user?.id || "",
-              model_number: modelFromState,
+              model_number: baseModelFromState,
               brand: brandFromState,
               search_date: new Date().toISOString(),
               manual_urls: manualUrls,
             });
             if (user?.id) {
-              createManualSearch(user.id, modelFromState, brandFromState, manualUrls)
+              createManualSearch(user.id, baseModelFromState, brandFromState, manualUrls)
                 .then(() => {})
                 .catch((e) => console.error("Failed to persist brave manuals:", e));
             }
@@ -309,13 +310,14 @@ export function useChat(user: User | null): UseChatReturn {
             },
           }));
 
-          /* Auto-populate manuals via shared store */
-          const manualUrls = buildManualUrls(extractedBrand, extractedModel);
+          /* Auto-populate manuals via shared store — normalize to base model */
+          const baseExtractedModel = getBaseModel(extractedModel);
+          const manualUrls = buildManualUrls(extractedBrand, baseExtractedModel);
 
           addManual({
             id: crypto.randomUUID(),
             user_id: user?.id || "",
-            model_number: extractedModel,
+            model_number: baseExtractedModel,
             brand: extractedBrand,
             search_date: new Date().toISOString(),
             manual_urls: manualUrls,
@@ -323,7 +325,7 @@ export function useChat(user: User | null): UseChatReturn {
 
           /* Persist manual search to DB (fire-and-forget) */
           if (user?.id) {
-            createManualSearch(user.id, extractedModel, extractedBrand, manualUrls)
+            createManualSearch(user.id, baseExtractedModel, extractedBrand, manualUrls)
               .then(() => {})
               .catch((e) => console.error("Failed to persist manual search:", e));
           }

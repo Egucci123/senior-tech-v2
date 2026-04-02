@@ -9,6 +9,8 @@
  * SPEC CONTEXT: Manufacturer domain + spec results fed to Sonnet as ground truth.
  */
 
+import { getBaseModel } from "./model-utils";
+
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 const MODEL_HAIKU = "claude-haiku-4-5";
@@ -151,44 +153,6 @@ function getBrandDocDomain(brand: string): string | null {
   return null;
 }
 
-/**
- * Strip a full HVAC model number to its base identifier for manual lookups.
- * Manuals are catalogued by base model — not the full config string.
- *
- * Works for all major brands:
- *   ZE060H12A2A1ABA1A2  → ZE060     York/JCI     letters + 3 digits
- *   24ACC636A003        → 24ACC636  Carrier       digits + letters + digits
- *   4TTR3036E1000AA     → 4TTR3036  Trane         digit + letters + digits
- *   GSX160601           → GSX160601 Goodman       short, return as-is
- *   RA1636AJ1NA         → RA1636    Rheem         letters + 4 digits
- *   GMVC960803BN        → GMVC9608  Goodman furn  letters + digits, capped
- *   SL280UH110XV60C     → SL280     Lennox        letters + digits
- *   XL18i-060           → XL18      Trane         hyphen-stripped
- */
-function getBaseModel(model: string): string {
-  if (!model || model.length <= 10) return model;
-
-  // Strip hyphens, spaces, underscores — some models use them as separators
-  const m = model.replace(/[\s\-_]/g, "").toUpperCase();
-
-  if (m.length <= 10) return m;
-
-  // Pattern A: leading letters then digits  (York, Rheem, Goodman, Lennox...)
-  //   ZE + 060 = ZE060
-  //   RA + 1636 = RA1636
-  //   GSX + 160601 = GSX160601
-  const patA = m.match(/^([A-Z]{1,5}\d{3,6})/);
-  if (patA && patA[1].length < m.length - 2) return patA[1];
-
-  // Pattern B: leading digit(s) then letters then digits  (Carrier, Trane...)
-  //   24 + ACC + 636 = 24ACC636
-  //    4 + TTR + 3036 = 4TTR3036
-  const patB = m.match(/^(\d{1,2}[A-Z]{2,5}\d{3,6})/);
-  if (patB && patB[1].length < m.length - 2) return patB[1];
-
-  // Fallback: first 9 characters covers most cases
-  return m.slice(0, 9);
-}
 
 function isDirectPdf(url: string): boolean {
   const u = url.toLowerCase();

@@ -6,6 +6,7 @@ import type { ManualSearch } from "@/types";
 import { getManualSearches, createManualSearch } from "@/lib/supabase";
 import ManualCard from "./ManualCard";
 import { buildManualUrls } from "@/lib/manual-links";
+import { isSameModel, getBaseModel } from "@/lib/model-utils";
 
 interface ManualsScreenProps {
   sharedManuals?: ManualSearch[];
@@ -23,17 +24,18 @@ function scoreManual(m: ManualSearch): number {
   }, 0);
 }
 
-/** Keep only the best entry per model number */
+/** Keep only the best entry per model — uses isSameModel so ZE060 and ZE060H12A2... merge */
 function deduplicateByModel(manuals: ManualSearch[]): ManualSearch[] {
-  const best = new Map<string, ManualSearch>();
+  const best: ManualSearch[] = [];
   for (const m of manuals) {
-    const key = m.model_number.toLowerCase();
-    const existing = best.get(key);
-    if (!existing || scoreManual(m) > scoreManual(existing)) {
-      best.set(key, m);
+    const existingIdx = best.findIndex((b) => isSameModel(b.model_number, m.model_number));
+    if (existingIdx === -1) {
+      best.push(m);
+    } else if (scoreManual(m) > scoreManual(best[existingIdx])) {
+      best[existingIdx] = m;
     }
   }
-  return Array.from(best.values());
+  return best;
 }
 
 export default function ManualsScreen({ sharedManuals = [], userId }: ManualsScreenProps) {
@@ -56,17 +58,17 @@ export default function ManualsScreen({ sharedManuals = [], userId }: ManualsScr
       .catch((e) => console.error("Failed to load manuals from DB:", e));
   }, [userId]);
 
-  // Merge all sources — deduplicate across them, best entry wins
+  // Merge all sources — deduplicate across them using isSameModel, best entry wins
   const sharedDeduped = deduplicateByModel(sharedManuals);
   const allManuals = [
     ...sharedDeduped,
     ...deduplicateByModel(dbManuals).filter(
-      (dm) => !sharedDeduped.some((sm) => sm.model_number.toLowerCase() === dm.model_number.toLowerCase())
+      (dm) => !sharedDeduped.some((sm) => isSameModel(sm.model_number, dm.model_number))
     ),
     ...deduplicateByModel(localManuals).filter(
       (lm) =>
-        !sharedDeduped.some((sm) => sm.model_number.toLowerCase() === lm.model_number.toLowerCase()) &&
-        !dbManuals.some((dm) => dm.model_number.toLowerCase() === lm.model_number.toLowerCase())
+        !sharedDeduped.some((sm) => isSameModel(sm.model_number, lm.model_number)) &&
+        !dbManuals.some((dm) => isSameModel(dm.model_number, lm.model_number))
     ),
   ];
 
@@ -76,23 +78,24 @@ export default function ManualsScreen({ sharedManuals = [], userId }: ManualsScr
 
     setSearchPerformed(true);
 
-    // Check if model already exists
-    const existing = allManuals.find(
-      (m) => m.model_number.toLowerCase() === query.toLowerCase()
-    );
+    // Check if model already exists (fuzzy — handles full vs base model)
+    const existing = allManuals.find((m) => isSameModel(m.model_number, query));
 
     if (existing) {
       setNoResults(false);
       return;
     }
 
+    // Normalize to base model for consistent storage and deduplication
+    const baseQuery = getBaseModel(query);
+
     // Build smart manual URLs using brand-aware domain targeting
-    const manualUrls = buildManualUrls("", query);
+    const manualUrls = buildManualUrls("", baseQuery);
 
     const newManual: ManualSearch = {
       id: crypto.randomUUID(),
       user_id: userId || "",
-      model_number: query,
+      model_number: baseQuery,
       brand: "",
       search_date: new Date().toISOString(),
       manual_urls: manualUrls,
@@ -104,7 +107,7 @@ export default function ManualsScreen({ sharedManuals = [], userId }: ManualsScr
 
     // Persist to DB (fire-and-forget)
     if (userId) {
-      createManualSearch(userId, query, "", manualUrls)
+      createManualSearch(userId, baseQuery, "", manualUrls)
         .then(() => {})
         .catch((e) => console.error("Failed to persist manual search:", e));
     }
