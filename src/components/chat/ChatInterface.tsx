@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Wrench, Camera, ArrowUp, RotateCcw } from "lucide-react";
+import { Wrench, Camera, ArrowUp, RotateCcw, ClipboardList, Loader2, X, Copy, Check } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import ChatMessage from "./ChatMessage";
 import SafetyGate from "./SafetyGate";
@@ -28,6 +28,106 @@ interface ChatInterfaceProps {
   user?: User | null;
 }
 
+/* ── Summary Modal ── */
+interface SummaryModalProps {
+  summary: string;
+  checklist: string;
+  onClose: () => void;
+}
+
+function SummaryModal({ summary, checklist, onClose }: SummaryModalProps) {
+  const [copied, setCopied] = useState(false);
+
+  const fullText = [
+    "JOB SUMMARY",
+    "===========",
+    summary,
+    "",
+    "CLOSE-OUT CHECKLIST",
+    "===================",
+    checklist,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(fullText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* noop */
+    }
+  }, [fullText]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 px-0 pb-0">
+      <div className="bg-surface-container-low ghost-border rounded-t-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-outline-variant/20">
+          <span className="font-headline font-bold text-xs uppercase tracking-widest text-primary-container">
+            JOB SUMMARY
+          </span>
+          <button
+            onClick={onClose}
+            className="text-outline hover:text-on-surface transition-colors"
+            aria-label="Close summary"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {summary && (
+            <div>
+              <p className="font-headline font-bold text-[10px] uppercase tracking-widest text-outline mb-2">
+                DIAGNOSTIC SUMMARY
+              </p>
+              <p className="font-body text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
+                {summary}
+              </p>
+            </div>
+          )}
+          {checklist && (
+            <div>
+              <p className="font-headline font-bold text-[10px] uppercase tracking-widest text-outline mb-2">
+                CLOSE-OUT CHECKLIST
+              </p>
+              <p className="font-body text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
+                {checklist}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-4 border-t border-outline-variant/20">
+          <button
+            onClick={handleCopy}
+            className="w-full h-11 rounded-lg bg-primary-container text-on-primary-container
+                       font-headline font-bold text-xs uppercase tracking-wider
+                       flex items-center justify-center gap-2
+                       hover:brightness-110 active:scale-[0.98] transition-all"
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4" />
+                COPIED
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                COPY TO CLIPBOARD
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ChatInterface({ user }: ChatInterfaceProps) {
   const {
     messages,
@@ -39,6 +139,12 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
   } = useChat(user ?? null);
 
   const [input, setInput] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryModal, setSummaryModal] = useState<{
+    summary: string;
+    checklist: string;
+  } | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -94,12 +200,60 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
     [isLoading, sendMessage]
   );
 
+  const handleSummarize = useCallback(async () => {
+    if (summaryLoading) return;
+
+    // Need at least some messages to summarize
+    if (messages.length === 0) return;
+
+    setSummaryLoading(true);
+    try {
+      const conversation = messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      const [summaryRes, checklistRes] = await Promise.all([
+        fetch("/api/summary", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ conversation, type: "summary" }),
+        }),
+        fetch("/api/summary", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ conversation, type: "checklist" }),
+        }),
+      ]);
+
+      const summaryData = summaryRes.ok ? await summaryRes.json() : { result: "" };
+      const checklistData = checklistRes.ok ? await checklistRes.json() : { result: "" };
+
+      setSummaryModal({
+        summary: summaryData.result || "",
+        checklist: checklistData.result || "",
+      });
+    } catch {
+      /* noop */
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [messages, summaryLoading]);
+
   const hasMessages = messages.length > 0;
 
   return (
     <div className="flex flex-col h-full bg-[#0e0e0e]">
       <SafetyGate isOpen={safetyGateOpen} onConfirm={confirmSafety} />
       <QuickReferenceDrawer />
+
+      {summaryModal && (
+        <SummaryModal
+          summary={summaryModal.summary}
+          checklist={summaryModal.checklist}
+          onClose={() => setSummaryModal(null)}
+        />
+      )}
 
       {/* ── Chat Header Bar ── */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#0e0e0e]">
@@ -141,8 +295,7 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
             <div className="w-full max-w-sm mb-6">
               <div className="border-l-[3px] border-primary-container bg-surface-container-low rounded-lg px-4 py-4">
                 <p className="font-body text-sm text-on-surface leading-relaxed">
-                  Snap a photo of the data plate and tell me what it&apos;s doing. I&apos;ll pull up
-                  everything I know about the unit and find the manuals for you.
+                  Senior Tech ready. Upload a photo of the data plate to get started — I&apos;ll pull the unit specs, platform knowledge, and manuals automatically.
                 </p>
               </div>
               <p className="text-[10px] font-headline uppercase tracking-wider text-outline mt-1.5 ml-3">
@@ -159,7 +312,7 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
                          hover:brightness-110 active:scale-[0.97] transition-all mb-3"
             >
               <Camera className="w-5 h-5" />
-              UPLOAD DATA PLATE
+              UPLOAD PHOTO
             </button>
 
             <p className="font-body text-xs text-outline">
@@ -230,6 +383,23 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
             PHOTO
           </button>
           <VoiceInput onTranscript={handleVoiceTranscript} />
+          <button
+            onClick={handleSummarize}
+            disabled={summaryLoading || !hasMessages}
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg
+                       bg-surface-container-high font-headline font-bold text-[10px]
+                       uppercase tracking-wider text-outline
+                       hover:text-on-surface transition-colors
+                       disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="Summarize diagnostic"
+          >
+            {summaryLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ClipboardList className="w-4 h-4" />
+            )}
+            SUMMARIZE
+          </button>
           <input
             ref={fileInputRef}
             type="file"

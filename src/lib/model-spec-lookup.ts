@@ -100,12 +100,18 @@ export interface BraveLookupResult {
 
 function classifyManualUrl(title: string, url: string): string | null {
   const t = (title + " " + url).toLowerCase();
-  if (t.includes("install") || t.includes("setup")) return "INSTALL";
-  if (t.includes("service") || t.includes("technical") || t.includes("repair")) return "SERVICE";
+  if (t.includes("install") || t.includes("setup") || t.includes("/iom/")) return "INSTALL";
+  if (t.includes("service") || t.includes("technical") || t.includes("repair") || t.includes("/technical/") || t.includes("/lit/")) return "SERVICE";
   if (t.includes("wiring") || t.includes("schematic") || t.includes("diagram")) return "WIRING";
   if (t.includes("parts") || t.includes("catalog") || t.includes("iom")) return "PARTS";
-  if (t.includes(".pdf") || t.includes("manual") || t.includes("guide")) return "INSTALL";
+  if (t.includes(".pdf") || t.includes("/pdf/") || t.includes("manual") || t.includes("guide")) return "INSTALL";
   return null;
+}
+
+/** Returns true if the URL is likely a direct PDF link */
+function isDirectPdf(url: string): boolean {
+  const u = url.toLowerCase();
+  return u.endsWith(".pdf") || u.includes("/pdf/") || u.includes(".pdf?");
 }
 
 async function braveSearch(query: string, key: string, count = 6): Promise<BraveResult[]> {
@@ -132,13 +138,14 @@ export async function fetchBraveSpecs(
   if (!key || !brand || !model) return null;
 
   try {
-    // Single search covers both specs and manuals
-    const [specResults, manualResults] = await Promise.all([
+    // Three parallel searches: specs, manual pages, and direct PDF files
+    const [specResults, manualResults, pdfResults] = await Promise.all([
       braveSearch(`${brand} ${model} inducer motor voltage specifications technical data service`, key, 6),
       braveSearch(`${brand} ${model} installation service manual filetype:pdf`, key, 6),
+      braveSearch(`${brand} ${model} filetype:pdf`, key, 8),
     ]);
 
-    if (!specResults.length && !manualResults.length) return null;
+    if (!specResults.length && !manualResults.length && !pdfResults.length) return null;
 
     // Build spec context for Sonnet
     const specLines = specResults
@@ -150,11 +157,15 @@ export async function fetchBraveSpecs(
       ? `WEB-VERIFIED SPECS — ${brand} ${model}:\n${specLines}\n\nCRITICAL: Use these web results as your PRIMARY source for this specific model. Your training data may have wrong specs for this exact unit. If inducer voltage, board type, capacitor setup, or any electrical spec is mentioned in these results — use that, not your default assumption. If a spec is NOT in these results and NOT visible in the photo — say "I need to verify that for this exact model" rather than guessing.`
       : "";
 
-    // Extract real PDF URLs for Manuals tab
+    // Merge manual results: prefer direct PDFs first, then general manual pages
+    // Direct PDFs from the pdf search are highest priority
+    const directPdfs = pdfResults.filter((r) => isDirectPdf(r.url));
+    const allManualCandidates = [...directPdfs, ...manualResults, ...pdfResults];
+
     const seen = new Set<string>();
     const manualUrls: { type: string; url: string; title: string }[] = [];
 
-    for (const r of manualResults) {
+    for (const r of allManualCandidates) {
       const type = classifyManualUrl(r.title, r.url);
       if (type && !seen.has(type)) {
         seen.add(type);
@@ -162,18 +173,19 @@ export async function fetchBraveSpecs(
       }
     }
 
-    // Fill any missing types with Google fallback
+    // Fill any missing types — prefer a search-results page URL as fallback over nothing
     const allTypes = ["INSTALL", "SERVICE", "WIRING", "PARTS"];
     const gq = encodeURIComponent(`${brand} ${model}`);
     for (const type of allTypes) {
       if (!seen.has(type)) {
-        const suffix = type === "INSTALL" ? "installation+manual"
-          : type === "SERVICE" ? "service+manual"
-          : type === "WIRING" ? "wiring+diagram"
-          : "parts+catalog";
+        // Use Brave search results page as fallback (better than a blind Google query)
+        const suffix = type === "INSTALL" ? "installation+manual+filetype:pdf"
+          : type === "SERVICE" ? "service+manual+filetype:pdf"
+          : type === "WIRING" ? "wiring+diagram+filetype:pdf"
+          : "parts+catalog+filetype:pdf";
         manualUrls.push({
           type,
-          url: `https://www.google.com/search?q=${gq}+${suffix}+filetype:pdf`,
+          url: `https://search.brave.com/search?q=${gq}+${suffix}`,
           title: `${brand} ${model} ${type.toLowerCase()} manual`,
         });
       }

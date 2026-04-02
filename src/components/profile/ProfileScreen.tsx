@@ -265,6 +265,27 @@ export default function ProfileScreen() {
     );
   }
 
+  // Not loading but no session — show sign-in prompt with sign-out option
+  if (!session) {
+    return (
+      <div className="px-4 pt-20 pb-24 max-w-lg mx-auto flex flex-col items-center justify-center min-h-[50vh] gap-4">
+        <span className="font-headline font-bold text-xs uppercase tracking-widest text-outline">
+          NOT SIGNED IN
+        </span>
+        <p className="font-body text-sm text-outline text-center">
+          Sign in to view and manage your profile settings.
+        </p>
+        <button
+          onClick={handleSignOut}
+          className="mt-2 h-11 px-6 rounded-lg border border-error/40 font-headline font-bold text-sm uppercase tracking-wider text-error transition-colors active:bg-error/10 flex items-center justify-center gap-2"
+        >
+          <LogOut className="w-4 h-4" />
+          GO TO SIGN IN
+        </button>
+      </div>
+    );
+  }
+
   const initials =
     ((user?.first_name?.[0] ?? '') + (user?.last_name?.[0] ?? '')).toUpperCase() || 'ST';
   const fullName =

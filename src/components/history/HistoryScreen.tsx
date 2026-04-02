@@ -96,25 +96,31 @@ export default function HistoryScreen({ userId, onResumeSession }: HistoryScreen
   const [selectedSession, setSelectedSession] = useState<DiagnosticSession | null>(null);
   const [sessions, setSessions] = useState<DiagnosticSession[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   const fetchSessions = useCallback(async () => {
-    if (!userId) {
+    // Guard: userId must be a non-empty string
+    if (!userId || typeof userId !== "string" || !userId.trim()) {
       setSessions([]);
+      setFetchError(false);
       return;
     }
 
     setLoading(true);
+    setFetchError(false);
     try {
       const dbStatus = filterToDbStatus(activeFilter);
-      const { data, error } = await getDiagnosticSessions(userId, dbStatus);
+      const { data, error } = await getDiagnosticSessions(userId.trim(), dbStatus);
       if (error) {
         console.error("Failed to fetch diagnostic sessions:", error);
+        setFetchError(true);
         setSessions([]);
       } else {
         setSessions((data as DiagnosticSession[]) || []);
       }
     } catch (e) {
       console.error("Failed to fetch diagnostic sessions:", e);
+      setFetchError(true);
       setSessions([]);
     } finally {
       setLoading(false);
@@ -138,7 +144,7 @@ export default function HistoryScreen({ userId, onResumeSession }: HistoryScreen
   }
 
   // Show empty state if no userId
-  if (!userId) {
+  if (!userId || typeof userId !== "string" || !userId.trim()) {
     return (
       <div className="px-4 pt-20 pb-24 max-w-lg mx-auto">
         <div className="text-center py-12">
@@ -180,9 +186,14 @@ export default function HistoryScreen({ userId, onResumeSession }: HistoryScreen
       {/* Session Cards */}
       {!loading && (
         <div className="flex flex-col gap-3">
-          {sessions.length === 0 && (
+          {fetchError && (
             <div className="text-center py-12">
-              <p className="text-outline text-sm">No sessions found.</p>
+              <p className="text-outline text-sm">No diagnostic history yet.</p>
+            </div>
+          )}
+          {!fetchError && sessions.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-outline text-sm">No diagnostic history yet.</p>
             </div>
           )}
 
