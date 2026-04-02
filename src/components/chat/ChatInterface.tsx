@@ -295,29 +295,13 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
             <div className="w-full max-w-sm mb-6">
               <div className="border-l-[3px] border-primary-container bg-surface-container-low rounded-lg px-4 py-4">
                 <p className="font-body text-sm text-on-surface leading-relaxed">
-                  Senior Tech ready. Upload a photo of the data plate to get started — I&apos;ll pull the unit specs, platform knowledge, and manuals automatically.
+                  Senior Tech online. Tap the camera button below to upload a data plate photo — I&apos;ll identify the unit, pull specs and platform knowledge, and load the manuals automatically.
                 </p>
               </div>
               <p className="text-[10px] font-headline uppercase tracking-wider text-outline mt-1.5 ml-3">
                 SENIOR_TECH_AI
               </p>
             </div>
-
-            {/* Prominent upload button */}
-            <button
-              onClick={handlePhotoClick}
-              className="flex items-center gap-2 px-6 py-3.5 rounded-lg
-                         bg-primary-container text-on-primary-container
-                         font-headline font-bold text-sm uppercase tracking-wider
-                         hover:brightness-110 active:scale-[0.97] transition-all mb-3"
-            >
-              <Camera className="w-5 h-5" />
-              UPLOAD PHOTO
-            </button>
-
-            <p className="font-body text-xs text-outline">
-              Or describe the issue below
-            </p>
           </div>
         )}
 
