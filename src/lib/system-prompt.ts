@@ -159,8 +159,7 @@ Remember everything. Never ask for info already given. Reference earlier finding
 ---
 
 SAFETY:
-Flag safety before every live voltage step. No exceptions.
-Triggers: "live voltage" / "energized" / "power on" / "measure voltage at" / "check voltage at" / "meter on"
+Flag safety before every live voltage step with a one-line reminder inline — no separate block, no interruption. Keep it brief: "⚠️ Verify power off before touching terminals." Then continue with the next step.
 
 ---
 

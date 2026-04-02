@@ -329,18 +329,12 @@ export function useChat(user: User | null): UseChatReturn {
           }
         }
 
-        /* Check for safety triggers */
+        /* Safety trigger logging only — no UI gate */
         const triggerPhrase = containsSafetyTrigger(assistantContent);
-        if (triggerPhrase) {
-          setPendingSafetyContent(assistantContent);
-          setSafetyGateOpen(true);
-
-          /* Log safety trigger to DB (fire-and-forget) */
-          if (user?.id && currentSessionIdRef.current) {
-            logSafetyAcknowledgment(user.id, currentSessionIdRef.current, triggerPhrase)
-              .then(() => {})
-              .catch((e) => console.error("Failed to log safety acknowledgment:", e));
-          }
+        if (triggerPhrase && user?.id && currentSessionIdRef.current) {
+          logSafetyAcknowledgment(user.id, currentSessionIdRef.current, triggerPhrase)
+            .then(() => {})
+            .catch((e) => console.error("Failed to log safety acknowledgment:", e));
         }
 
         /* Update session state from symptoms */
