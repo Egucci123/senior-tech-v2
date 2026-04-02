@@ -3,10 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 import { extractModelFromImage, fetchBraveSpecs } from "@/lib/model-spec-lookup";
 import { AI_MODELS, MAX_TOKENS, ANTHROPIC_API_URL, ANTHROPIC_VERSION } from "@/lib/ai-config";
 
-/* ── Server-side Supabase client for usage tracking ── */
+/* ── Server-side Supabase admin client — uses service role key to bypass RLS ── */
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 );
 
 /* ── Static cached system prompt block (Senior Tech persona) ── */
