@@ -137,8 +137,8 @@ export async function POST(request: NextRequest) {
         apiKey
       );
       if (extracted?.brand && extracted?.model) {
-        // v2 suffix: busts old cached results that used Brave search page fallbacks
-        const cacheKey = `${extracted.brand}__${extracted.model}__v2`.toLowerCase().replace(/\s+/g, "_");
+        // v3 suffix: busts cached results that used full model strings instead of base model
+        const cacheKey = `${extracted.brand}__${extracted.model}__v3`.toLowerCase().replace(/\s+/g, "_");
 
         // Check Supabase cache first — avoid paying for repeat searches
         const { data: cached } = await supabaseAdmin

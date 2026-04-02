@@ -151,6 +151,41 @@ function getBrandDocDomain(brand: string): string | null {
   return null;
 }
 
+/**
+ * Strip a full HVAC model number down to its base identifier for manual searches.
+ * Manuals are indexed by base model — not the full config string.
+ *
+ * Examples:
+ *   ZE060H12A2A1ABA1A2  → ZE060    (York: letter(s) + 3 digits)
+ *   24ACC636A003        → 24ACC636 (Carrier: stops before trailing letter+digits option)
+ *   4TTR3036E1000AA     → 4TTR3036 (Trane)
+ *   GSX160601           → GSX16060 (Goodman)
+ *   RA1636AJ1NA         → RA1636   (Rheem)
+ *
+ * Strategy: find the first "break point" where the string transitions from the
+ * core unit identifier into option/config codes (typically a repeated alpha run
+ * after digits, or the string exceeds ~8-9 meaningful chars).
+ */
+function getBaseModel(model: string): string {
+  if (!model || model.length <= 8) return model;
+
+  // Remove spaces
+  const m = model.replace(/\s+/g, "").toUpperCase();
+
+  // Pattern: leading letters + digits = base model
+  // e.g. ZE060, 24ACC636, 4TTR3036, GSX16060, RA1636
+  // Stop at the first letter-run that follows a digit-run after position 4
+  const match = m.match(/^([A-Z]{1,4}\d{3,6}[A-Z]{0,2}\d{0,2})/);
+  if (match) {
+    const base = match[1];
+    // Only use if it's meaningfully shorter than the full model
+    if (base.length < m.length - 2) return base;
+  }
+
+  // Fallback: first 8 characters
+  return m.slice(0, 8);
+}
+
 function isDirectPdf(url: string): boolean {
   const u = url.toLowerCase();
   return u.endsWith(".pdf") || u.includes("/pdf/") || u.includes(".pdf?");
@@ -193,15 +228,15 @@ async function braveSearch(query: string, key: string, count = 6): Promise<Brave
   }
 }
 
-/** ManualsLib search URL — always a live link regardless of what Brave returns */
-function manualsLibSearch(brand: string, model: string, type: string): string {
+/** ManualsLib search URL using BASE model — always a live link */
+function manualsLibSearch(brand: string, baseModel: string, type: string): string {
   const suffixMap: Record<string, string> = {
     INSTALL: "installation manual",
     SERVICE: "service manual",
     WIRING: "wiring diagram",
     PARTS: "parts catalog",
   };
-  const q = encodeURIComponent(`${brand} ${model} ${suffixMap[type] ?? "manual"}`);
+  const q = encodeURIComponent(`${brand} ${baseModel} ${suffixMap[type] ?? "manual"}`);
   return `https://www.manualslib.com/search/?q=${q}`;
 }
 
@@ -213,18 +248,21 @@ export async function fetchBraveSpecs(
   if (!key || !brand || !model) return null;
 
   const mfrDomain = getBrandDocDomain(brand);
+  // Use base model for all searches — full config strings like ZE060H12A2A1ABA1A2
+  // return zero results on ManualsLib and manufacturer portals
+  const baseModel = getBaseModel(model);
 
   try {
-    // Two parallel searches:
-    // A — ManualsLib: reliable product pages for every brand
-    // B — Manufacturer domain PDFs: direct OEM files when available
+    // Three parallel searches using base model:
+    // A — ManualsLib: most reliable, indexed by base model
+    // B — Manufacturer domain PDFs: direct OEM files
     // C — Spec data: feeds AI context only
     const [manualsLibResults, mfrResults, specResults] = await Promise.all([
-      braveSearch(`site:manualslib.com ${brand} ${model}`, key, 6),
+      braveSearch(`site:manualslib.com ${brand} ${baseModel}`, key, 6),
       mfrDomain
-        ? braveSearch(`site:${mfrDomain} ${model} filetype:pdf`, key, 8)
-        : braveSearch(`${brand} ${model} filetype:pdf service installation`, key, 6),
-      braveSearch(`${brand} ${model} specifications technical data voltage`, key, 5),
+        ? braveSearch(`site:${mfrDomain} ${baseModel} filetype:pdf`, key, 8)
+        : braveSearch(`${brand} ${baseModel} filetype:pdf service installation`, key, 6),
+      braveSearch(`${brand} ${baseModel} specifications technical data voltage`, key, 5),
     ]);
 
     if (!manualsLibResults.length && !mfrResults.length && !specResults.length) return null;
@@ -242,8 +280,7 @@ export async function fetchBraveSpecs(
     const seen = new Set<string>();
     const manualUrls: BraveLookupResult["manualUrls"] = [];
 
-    // SOURCE 1 — ManualsLib product/manual pages
-    // Best ManualsLib result: product page preferred over generic pages
+    // SOURCE 1 — ManualsLib product/manual pages (searched with base model)
     const manualsLibPage =
       manualsLibResults.find((r) => r.url.includes("/products/")) ||
       manualsLibResults.find((r) => r.url.includes("/manual/")) ||
@@ -253,6 +290,18 @@ export async function fetchBraveSpecs(
       for (const type of ["INSTALL", "SERVICE", "WIRING", "PARTS"]) {
         seen.add(type);
         manualUrls.push({ type, url: manualsLibPage.url, title: manualsLibPage.title, source: 1 });
+      }
+    } else {
+      // Brave found nothing on ManualsLib — go straight to Source 3 search URLs
+      // so all 4 buttons are populated before we even check for OEM PDFs
+      for (const type of ["INSTALL", "SERVICE", "WIRING", "PARTS"]) {
+        seen.add(type);
+        manualUrls.push({
+          type,
+          url: manualsLibSearch(brand, baseModel, type),
+          title: `Search ManualsLib: ${brand} ${baseModel}`,
+          source: 3,
+        });
       }
     }
 
@@ -274,12 +323,13 @@ export async function fetchBraveSpecs(
     }
 
     // SOURCE 3 — ManualsLib search URL for any type still missing
+    // Uses base model so searches actually return results
     for (const type of ["INSTALL", "SERVICE", "WIRING", "PARTS"]) {
       if (!seen.has(type)) {
         manualUrls.push({
           type,
-          url: manualsLibSearch(brand, model, type),
-          title: `Search ManualsLib: ${brand} ${model}`,
+          url: manualsLibSearch(brand, baseModel, type),
+          title: `Search ManualsLib: ${brand} ${baseModel}`,
           source: 3,
         });
       }
