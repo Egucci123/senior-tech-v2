@@ -134,7 +134,7 @@ export async function fetchBraveSpecs(
   try {
     // Single search covers both specs and manuals
     const [specResults, manualResults] = await Promise.all([
-      braveSearch(`${brand} ${model} specifications technical data`, key, 4),
+      braveSearch(`${brand} ${model} inducer motor voltage specifications technical data service`, key, 6),
       braveSearch(`${brand} ${model} installation service manual filetype:pdf`, key, 6),
     ]);
 
@@ -147,7 +147,7 @@ export async function fetchBraveSpecs(
       .join("\n");
 
     const specsContext = specLines
-      ? `WEB-VERIFIED SPECS — ${brand} ${model}:\n${specLines}\n\nUse the above to fill in any details not visible in the photo. Prioritize manufacturer data over training data for this specific model.`
+      ? `WEB-VERIFIED SPECS — ${brand} ${model}:\n${specLines}\n\nCRITICAL: Use these web results as your PRIMARY source for this specific model. Your training data may have wrong specs for this exact unit. If inducer voltage, board type, capacitor setup, or any electrical spec is mentioned in these results — use that, not your default assumption. If a spec is NOT in these results and NOT visible in the photo — say "I need to verify that for this exact model" rather than guessing.`
       : "";
 
     // Extract real PDF URLs for Manuals tab
