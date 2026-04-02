@@ -147,8 +147,8 @@ export async function POST(request: NextRequest) {
         apiKey
       );
       if (extracted?.brand && extracted?.model) {
-        // v3 suffix: busts cached results that used full model strings instead of base model
-        const cacheKey = `${extracted.brand}__${extracted.model}__v3`.toLowerCase().replace(/\s+/g, "_");
+        // v4 suffix: busts cached results that had multi-URL format; v4 = single INSTALL URL + ManualsLib brand normalization
+        const cacheKey = `${extracted.brand}__${extracted.model}__v4`.toLowerCase().replace(/\s+/g, "_");
 
         // 7-day TTL: ignore stale cache entries
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();

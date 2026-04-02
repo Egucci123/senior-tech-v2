@@ -57,3 +57,28 @@ export function getBrandDocDomain(brand: string): string | null {
   }
   return null;
 }
+
+/**
+ * ManualsLib catalogs brands differently from data plate names.
+ * JCI, Johnson Controls, Coleman, Luxaire, Fraser → all listed as "York" on ManualsLib.
+ * Carrier family brands each have their own ManualsLib listing.
+ * Most other brands match their data plate name exactly.
+ */
+const MANUALSLIB_BRAND_MAP: [string, string][] = [
+  ["johnson controls", "York"],
+  ["jci", "York"],
+  ["coleman hvac", "York"],
+  ["luxaire", "York"],
+  ["fraser", "York"],
+  // Carrier family — each listed separately on ManualsLib
+  // Rheem family — Ruud has own listing
+  // ICP brands — listed under their own name or "ICP"
+];
+
+export function normalizeBrandForManualsLib(brand: string): string {
+  const lower = brand.toLowerCase().trim();
+  for (const [key, normalized] of MANUALSLIB_BRAND_MAP) {
+    if (lower.includes(key) || key.includes(lower)) return normalized;
+  }
+  return brand;
+}

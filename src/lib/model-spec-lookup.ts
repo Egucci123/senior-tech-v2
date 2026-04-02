@@ -10,7 +10,7 @@
  */
 
 import { getBaseModel } from "./model-utils";
-import { getBrandDocDomain } from "./brand-domains";
+import { getBrandDocDomain, normalizeBrandForManualsLib } from "./brand-domains";
 import { AI_MODELS, ANTHROPIC_API_URL, ANTHROPIC_VERSION } from "./ai-config";
 
 interface ExtractedModel {
@@ -144,7 +144,8 @@ function manualsLibSearch(brand: string, baseModel: string, type: string): strin
     WIRING: "wiring diagram",
     PARTS: "parts catalog",
   };
-  const q = encodeURIComponent(`${brand} ${baseModel} ${suffixMap[type] ?? "manual"}`);
+  const mlBrand = normalizeBrandForManualsLib(brand);
+  const q = encodeURIComponent(`${mlBrand} ${baseModel} ${suffixMap[type] ?? "manual"}`);
   return `https://www.manualslib.com/search/?q=${q}`;
 }
 
@@ -165,8 +166,9 @@ export async function fetchBraveSpecs(
     // A — ManualsLib: most reliable, indexed by base model
     // B — Manufacturer domain PDFs: direct OEM files
     // C — Spec data: feeds AI context only
+    const mlBrand = normalizeBrandForManualsLib(brand);
     const [manualsLibResults, mfrResults, specResults] = await Promise.all([
-      braveSearch(`site:manualslib.com ${brand} ${baseModel}`, key, 6),
+      braveSearch(`site:manualslib.com ${mlBrand} ${baseModel}`, key, 6),
       mfrDomain
         ? braveSearch(`site:${mfrDomain} ${baseModel} filetype:pdf`, key, 8)
         : braveSearch(`${brand} ${baseModel} filetype:pdf service installation`, key, 6),

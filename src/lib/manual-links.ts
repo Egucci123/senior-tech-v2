@@ -4,11 +4,16 @@
  * ManualsLib is indexed by base model number and works for every major brand.
  */
 
+import { normalizeBrandForManualsLib } from "./brand-domains";
+import { getBaseModel } from "./model-utils";
+
 export function buildManualUrls(
   brand: string,
   model: string
 ): { type: string; url: string; source: 3 }[] {
-  const q = encodeURIComponent(`${brand} ${model} installation manual`.trim());
+  const mlBrand = normalizeBrandForManualsLib(brand);
+  const baseModel = getBaseModel(model);
+  const q = encodeURIComponent(`${mlBrand} ${baseModel} installation manual`.trim());
   return [
     {
       type: "INSTALL",
