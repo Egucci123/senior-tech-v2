@@ -240,6 +240,46 @@ export function useChat(user: User | null): UseChatReturn {
           }
         }
 
+        /* Extract Brave manual URLs and strip tag from displayed content */
+        const braveManualMatch = assistantContent.match(
+          /<!-- BRAVE_MANUALS:([\s\S]+?) -->/
+        );
+        if (braveManualMatch) {
+          try {
+            const braveManuals: { type: string; url: string; title: string }[] =
+              JSON.parse(braveManualMatch[1]);
+            const cleanContent = assistantContent
+              .replace(/<!-- BRAVE_MANUALS:[\s\S]+? -->/, "")
+              .trimStart();
+            assistantContent = cleanContent;
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsg.id ? { ...m, content: cleanContent } : m
+              )
+            );
+
+            /* Push real Brave-found manuals to Manuals tab */
+            const manualUrls = braveManuals.map((m) => ({ type: m.type, url: m.url }));
+            const brandFromState = sessionState?.equipment?.brand || "";
+            const modelFromState = sessionState?.equipment?.model || "";
+            addManual({
+              id: crypto.randomUUID(),
+              user_id: user?.id || "",
+              model_number: modelFromState,
+              brand: brandFromState,
+              search_date: new Date().toISOString(),
+              manual_urls: manualUrls,
+            });
+            if (user?.id) {
+              createManualSearch(user.id, modelFromState, brandFromState, manualUrls)
+                .then(() => {})
+                .catch((e) => console.error("Failed to persist brave manuals:", e));
+            }
+          } catch {
+            /* Ignore parse errors */
+          }
+        }
+
         /* Extract equipment tag and strip from displayed content */
         const equipmentMatch = assistantContent.match(
           /<!-- EQUIPMENT:brand=(.+?)\|model=(.+?) -->/

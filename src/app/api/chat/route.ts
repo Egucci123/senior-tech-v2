@@ -122,8 +122,10 @@ export async function POST(request: NextRequest) {
   const firstName = body.firstName || "Tech";
   const experienceLevel = body.experienceLevel || "mid";
 
-  /* ── Web spec lookup for photo requests ── */
+  /* ── Web spec + manual lookup for photo requests ── */
   let webSpecsContext: string | null = null;
+  let webManualUrls: { type: string; url: string; title: string }[] = [];
+
   if (hasPhoto && process.env.BRAVE_SEARCH_API_KEY) {
     const lastImgMsg = [...messages].reverse().find(
       (m: { role: string; image_base64?: string }) => m.role === "user" && m.image_base64
@@ -136,7 +138,11 @@ export async function POST(request: NextRequest) {
       );
       if (extracted?.brand && extracted?.model) {
         console.log(`[WEB LOOKUP] ${extracted.brand} ${extracted.model}`);
-        webSpecsContext = await fetchBraveSpecs(extracted.brand, extracted.model);
+        const result = await fetchBraveSpecs(extracted.brand, extracted.model);
+        if (result) {
+          webSpecsContext = result.specsContext;
+          webManualUrls = result.manualUrls;
+        }
       }
     }
   }
@@ -189,6 +195,13 @@ export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
+      // Inject manual URLs as machine-readable tag before Sonnet text
+      if (webManualUrls.length > 0) {
+        controller.enqueue(
+          encoder.encode(`<!-- BRAVE_MANUALS:${JSON.stringify(webManualUrls)} -->\n`)
+        );
+      }
+
       const reader = anthropicRes.body?.getReader();
       if (!reader) {
         controller.close();
