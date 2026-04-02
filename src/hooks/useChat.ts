@@ -12,7 +12,7 @@ import {
   logSafetyAcknowledgment,
 } from "@/lib/supabase";
 
-/* ── Convert a blob URL to base64, resizing to max 1024px ── */
+/* ── Convert a blob URL to base64, resizing to max 1920px ── */
 async function blobUrlToBase64(blobUrl: string): Promise<{ base64: string; mediaType: string } | null> {
   try {
     const response = await fetch(blobUrl);
@@ -24,7 +24,7 @@ async function blobUrlToBase64(blobUrl: string): Promise<{ base64: string; media
       const objectUrl = URL.createObjectURL(blob);
       img.onload = () => {
         URL.revokeObjectURL(objectUrl);
-        const MAX = 1024;
+        const MAX = 1920;
         let { width, height } = img;
         if (width > MAX || height > MAX) {
           if (width > height) {

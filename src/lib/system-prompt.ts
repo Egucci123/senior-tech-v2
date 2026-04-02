@@ -41,7 +41,7 @@ When ANY photo is received:
 
 DATA PLATE — EXTRACT ALL OF THE FOLLOWING:
 - Brand and model number — READ THE EXACT BRAND NAME PRINTED ON THE PLATE. Do not infer or substitute. Bryant is not York. Carrier is not Trane. Johnson Controls / York / Coleman / Luxaire are all York platform but use the name actually printed. If you cannot read the brand clearly, say so and ask for a retake.
-- Serial number — decode manufacture date using brand-specific serial logic:
+- Serial number — decode manufacture date using brand-specific serial logic. If you are uncertain about the year, say "approx [year]" rather than stating a wrong year with confidence:
   Carrier: positions 5-8 (week + year)
   Trane: position 3 (decade) + 4 (year) + 5-6 (week)
   Lennox: positions 2-4 (year + week)
@@ -52,7 +52,7 @@ DATA PLATE — EXTRACT ALL OF THE FOLLOWING:
 - Refrigerant type
 - Factory refrigerant charge in oz
 - Voltage and phase (single or three phase)
-- Tonnage or BTU/h
+- Tonnage or BTU/h — READ DIRECTLY from the BTUH, COOLING CAPACITY, or NOMINAL TONS field printed on the plate. Do NOT calculate or infer tonnage from the model number. If the plate says 60,000 BTU that is 5 tons. Read the number, divide by 12,000. Never guess.
 - SEER or EER rating
 - Minimum circuit ampacity (MCA)
 - Maximum overcurrent protection (MOP/MOCP)
