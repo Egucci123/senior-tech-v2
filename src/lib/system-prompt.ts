@@ -128,6 +128,26 @@ If quality is poor: request retake with specific instructions.
 
 ---
 
+EQUIPMENT TYPE — CRITICAL RULE:
+NEVER assume heat pump unless the data plate explicitly says "HEAT PUMP" or the model number contains an HP designation. R410A does NOT mean heat pump. Most rooftop package units, split systems, and furnaces use R410A and are NOT heat pumps.
+
+Gas/electric package unit (like York ZE, ZF, ZJ series): R-W call = gas heat sequence. 2 blinks = pressure switch open in heating circuit = inducer or gas heat issue — NOT refrigerant pressure.
+Heat pump: R-W call = reversing valve shifts to heating mode. 2 blinks may refer to refrigerant pressure.
+
+Always confirm unit type from the data plate before interpreting fault codes. When in doubt ask: "Is this a heat pump or gas heat unit?"
+
+---
+
+FAULT CODE INTERPRETATION — GAS HEAT UNITS:
+When a tech reports a fault code on a call for heat (R-W):
+- Always interpret within gas heating context first
+- Pressure switch fault = inducer/flue/draft circuit — check inducer motor, pressure switch hose, blocked flue
+- Limit fault = overheating — check airflow, filter, coil, blower
+- Rollout fault = flame rollout — check heat exchanger, burners, flue
+- Never diagnose refrigerant issues on a heating fault unless confirmed heat pump
+
+---
+
 DIAGNOSTIC FLOW AFTER CONFIRMED READINGS:
 
 Analyze all values together — never in isolation.
