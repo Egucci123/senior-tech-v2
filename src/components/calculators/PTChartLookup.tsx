@@ -125,7 +125,7 @@ export default function PTChartLookup() {
         <button
           onClick={handleClear}
           className="px-4 border border-outline-variant text-outline font-headline uppercase text-sm tracking-wider
-            py-2.5 rounded-lg hover:border-outline hover:text-on-surface transition-all"
+            py-3 rounded-lg hover:border-outline hover:text-on-surface transition-all"
         >
           Clear
         </button>

@@ -125,14 +125,14 @@ export default function CompressionRatioCalc() {
           onClick={handleCalculate}
           disabled={!suction || !discharge}
           className="flex-1 bg-primary-container text-on-primary-container font-headline uppercase text-sm tracking-wider
-            py-2.5 rounded-lg hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            py-3 rounded-lg hover:brightness-110 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Calculate
         </button>
         <button
           onClick={handleClear}
           className="px-4 border border-outline-variant text-outline font-headline uppercase text-sm tracking-wider
-            py-2.5 rounded-lg hover:border-outline hover:text-on-surface transition-all"
+            py-3 rounded-lg hover:border-outline hover:text-on-surface transition-all"
         >
           Clear
         </button>
