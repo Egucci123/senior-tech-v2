@@ -7,6 +7,7 @@ import ChatMessage from "./ChatMessage";
 import SafetyGate from "./SafetyGate";
 import VoiceInput from "./VoiceInput";
 import QuickReferenceDrawer from "../calculators/QuickReferenceDrawer";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import type { User } from "@/types";
 
 /* ── Response chips that can appear after AI messages ── */
@@ -153,6 +154,17 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+      if (!ALLOWED_MIME.includes(file.type)) {
+        alert("Only JPEG, PNG, WebP, or HEIC photos are supported.");
+        e.target.value = "";
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        alert("Photo must be under 10MB.");
+        e.target.value = "";
+        return;
+      }
       const url = URL.createObjectURL(file);
       const caption = input.trim() || "Photo attached";
       setInput("");
@@ -198,6 +210,7 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
   const hasMessages = messages.length > 0;
 
   return (
+    <ErrorBoundary>
     <div className="flex flex-col h-full bg-[#0e0e0e]">
       <SafetyGate isOpen={safetyGateOpen} onConfirm={confirmSafety} />
       <QuickReferenceDrawer />
@@ -376,5 +389,6 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   );
 }

@@ -189,18 +189,29 @@ Never give a Wikipedia answer.
 Never use "certainly" or "great question."
 Talk like a tech who has seen this a thousand times.`;
 
+const VALID_LEVELS = ["junior", "mid", "senior", "veteran", "master"] as const;
+type ExperienceLevel = typeof VALID_LEVELS[number];
+
 export function getDynamicSystemPrompt(firstName: string, experienceLevel: string): string {
-  const adjustments: Record<string, string> = {
-    junior: 'explain the why behind every step fully',
-    mid: 'skip basics, explain what findings mean',
-    senior: 'peer level focused guidance',
-    veteran: 'direct, minimal explanation',
-    master: 'pure peer, key differentiators only',
+  const validLevel: ExperienceLevel = (VALID_LEVELS as readonly string[]).includes(experienceLevel)
+    ? (experienceLevel as ExperienceLevel)
+    : "mid";
+
+  if (validLevel !== experienceLevel) {
+    console.warn(`[SystemPrompt] Invalid level "${experienceLevel}", defaulting to "mid"`);
+  }
+
+  const adjustments: Record<ExperienceLevel, string> = {
+    junior: "explain the why behind every step fully",
+    mid: "skip basics, explain what findings mean",
+    senior: "peer level focused guidance",
+    veteran: "direct, minimal explanation",
+    master: "pure peer, key differentiators only",
   };
 
   return `Tech name: ${firstName}
-Experience level: ${experienceLevel}
-Adjustment: ${adjustments[experienceLevel] || adjustments.mid}`;
+Experience level: ${validLevel}
+Adjustment: ${adjustments[validLevel]}`;
 }
 
 /**

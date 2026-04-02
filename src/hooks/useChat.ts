@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import type { ChatMessage, SessionState, User } from "@/types";
 import { addManual } from "./useManuals";
 import { buildManualUrls } from "@/lib/manual-links";
@@ -126,6 +126,36 @@ export function useChat(user: User | null): UseChatReturn {
 
   const turnCountRef = useRef(0);
   const currentSessionIdRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  /* ── Cleanup on unmount ── */
+  useEffect(() => {
+    return () => { abortControllerRef.current?.abort(); };
+  }, []);
+
+  /* ── Late user init: create session when user becomes available ── */
+  useEffect(() => {
+    if (user?.id && messages.length > 0 && !currentSessionIdRef.current) {
+      createDiagnosticSession(user.id)
+        .then(({ data }) => {
+          if (data?.id) currentSessionIdRef.current = data.id;
+        })
+        .catch((e) => console.error("[useChat] Late session create:", e));
+    }
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── sessionState localStorage persistence ── */
+  useEffect(() => {
+    if (!currentSessionIdRef.current || messages.length === 0) return;
+    try {
+      localStorage.setItem(
+        `st_session_${currentSessionIdRef.current}`,
+        JSON.stringify(sessionState)
+      );
+    } catch {
+      // quota exceeded — ignore
+    }
+  }, [sessionState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendMessage = useCallback(
     async (content: string, imageUrl?: string) => {
@@ -168,7 +198,7 @@ export function useChat(user: User | null): UseChatReturn {
         }
       }
 
-      /* Prepare last 4 messages for context window */
+      /* Prepare last 40 messages for context window */
       const recentMessages = [...messages, userMsg]
         .slice(-40)
         .map((m) => ({
@@ -188,9 +218,14 @@ export function useChat(user: User | null): UseChatReturn {
         const firstName = user?.first_name || "Tech";
         const experienceLevel = user?.experience_level || "mid";
 
+        /* Abort any in-flight request before starting a new one */
+        abortControllerRef.current?.abort();
+        abortControllerRef.current = new AbortController();
+
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: abortControllerRef.current.signal,
           body: JSON.stringify({
             messages: recentMessages,
             sessionState,
@@ -222,22 +257,34 @@ export function useChat(user: User | null): UseChatReturn {
         setMessages((prev) => [...prev, assistantMsg]);
 
         if (reader) {
-          let done = false;
-          while (!done) {
-            const { value, done: streamDone } = await reader.read();
-            done = streamDone;
-            if (value) {
-              const chunk = decoder.decode(value, { stream: true });
-              assistantContent += chunk;
+          try {
+            let done = false;
+            while (!done) {
+              const { value, done: streamDone } = await reader.read();
+              done = streamDone;
+              if (value) {
+                const chunk = decoder.decode(value, { stream: true });
+                assistantContent += chunk;
 
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantMsg.id
-                    ? { ...m, content: assistantContent }
-                    : m
-                )
-              );
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === assistantMsg.id
+                      ? { ...m, content: assistantContent }
+                      : m
+                  )
+                );
+              }
             }
+          } catch (err) {
+            if (err instanceof Error && err.name === "AbortError") return;
+            console.error("[useChat] Stream error:", err);
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsg.id
+                  ? { ...m, content: (m.content || "").trim() + "\n\n_[Response interrupted — please try again.]_" }
+                  : m
+              )
+            );
           }
         }
 
@@ -276,8 +323,8 @@ export function useChat(user: User | null): UseChatReturn {
                 .then(() => {})
                 .catch((e) => console.error("Failed to persist brave manuals:", e));
             }
-          } catch {
-            /* Ignore parse errors */
+          } catch (e) {
+            console.warn("[useChat] BRAVE_MANUALS tag parse failed:", e);
           }
         }
 
@@ -285,6 +332,11 @@ export function useChat(user: User | null): UseChatReturn {
         const equipmentMatch = assistantContent.match(
           /<!-- EQUIPMENT:brand=(.+?)\|model=(.+?) -->/
         );
+
+        if (!equipmentMatch && assistantContent.length > 300) {
+          console.debug("[useChat] No EQUIPMENT tag in response (length:", assistantContent.length, ")");
+        }
+
         if (equipmentMatch) {
           const extractedBrand = equipmentMatch[1].trim();
           const extractedModel = equipmentMatch[2].trim();
@@ -355,7 +407,7 @@ export function useChat(user: User | null): UseChatReturn {
         }
 
         /* Persist conversation to DB after AI response (fire-and-forget) */
-        if (currentSessionIdRef.current) {
+        if (currentSessionIdRef.current && user?.id) {
           // We need the final messages array — build it from what we know
           const updatedMessages = [...messages, userMsg, { ...assistantMsg, content: assistantContent }];
           updateDiagnosticSession(currentSessionIdRef.current, {
@@ -365,11 +417,12 @@ export function useChat(user: User | null): UseChatReturn {
             equipment_brand: sessionState.equipment.brand || undefined,
             equipment_model: sessionState.equipment.model || undefined,
             serial_number: sessionState.equipment.serial_number || undefined,
-          })
+          }, user.id)
             .then(() => {})
             .catch((e) => console.error("Failed to update diagnostic session:", e));
         }
       } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") return;
         console.error("Chat error:", error);
         const errorMsg: ChatMessage = {
           id: crypto.randomUUID(),
@@ -399,8 +452,17 @@ export function useChat(user: User | null): UseChatReturn {
       currentSessionIdRef.current = null;
     }
 
+    /* Revoke any blob URLs before resetting state */
+    setSessionState((prev) => {
+      if (prev.photos_received) {
+        prev.photos_received.forEach((url: string) => {
+          if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+        });
+      }
+      return createInitialSessionState();
+    });
+
     setMessages([]);
-    setSessionState(createInitialSessionState());
     turnCountRef.current = 0;
     setIsLoading(false);
     setSafetyGateOpen(false);

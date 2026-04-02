@@ -40,6 +40,14 @@ export async function loadFromDb(userId: string) {
   }
 }
 
+/** Call on sign-out to prevent user A's data leaking to user B on shared devices */
+export function clearManuals() {
+  _manuals = [];
+  _hasNew = false;
+  _dbLoaded = false;
+  notify();
+}
+
 /** Called from useChat when a model number is extracted from AI response */
 export function addManual(manual: ManualSearch, userId?: string) {
   // Normalize to base model before storing — prevents ZE060H12A2A1ABA1A2 vs ZE060 duplicates

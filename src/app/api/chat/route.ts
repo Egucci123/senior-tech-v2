@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { extractModelFromImage, fetchBraveSpecs } from "@/lib/model-spec-lookup";
+import { AI_MODELS, MAX_TOKENS, ANTHROPIC_API_URL, ANTHROPIC_VERSION } from "@/lib/ai-config";
 
 /* ── Server-side Supabase client for usage tracking ── */
 const supabaseAdmin = createClient(
@@ -8,21 +9,25 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 );
 
-/* ── Constants ── */
-const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_VERSION = "2023-06-01";
-
-const MODEL_SONNET = "claude-sonnet-4-5"; // photos + complex turns
-const MODEL_HAIKU = "claude-haiku-4-5";   // simple turns 1-3
-
-const MAX_TOKENS: Record<string, number> = {
-  photo: 1500,
-  complex: 800,
-  simple: 300,
-};
-
 /* ── Static cached system prompt block (Senior Tech persona) ── */
 import { STATIC_SYSTEM_PROMPT, getDynamicSystemPrompt } from "@/lib/system-prompt";
+
+/* ── Security headers applied to all responses ── */
+const securityHeaders: Record<string, string> = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+};
+
+/* ── Sanitize user-supplied strings before injecting into system prompt ── */
+function sanitizeForPrompt(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .slice(0, 500);
+}
 
 /* ── Build model selection ── */
 function selectModel(
@@ -30,10 +35,10 @@ function selectModel(
   hasPhoto: boolean,
   turnCount: number
 ): string {
-  if (hasPhoto) return MODEL_SONNET;
-  if (turnCount <= 3) return MODEL_HAIKU;
-  if (requestType === "complex") return MODEL_SONNET;
-  return MODEL_HAIKU;
+  if (hasPhoto) return AI_MODELS.SONNET;
+  if (turnCount <= 3) return AI_MODELS.HAIKU;
+  if (requestType === "complex") return AI_MODELS.SONNET;
+  return AI_MODELS.HAIKU;
 }
 
 /* ── POST handler ── */
@@ -42,8 +47,13 @@ export async function POST(request: NextRequest) {
   if (!apiKey) {
     return new Response(
       JSON.stringify({ error: "ANTHROPIC_API_KEY not configured" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { "Content-Type": "application/json", ...securityHeaders } }
     );
+  }
+
+  const braveKey = process.env.BRAVE_SEARCH_API_KEY;
+  if (!braveKey) {
+    console.warn("[api/chat] BRAVE_SEARCH_API_KEY not configured — web specs disabled");
   }
 
   const body = await request.json();
@@ -68,24 +78,24 @@ export async function POST(request: NextRequest) {
     if (count && count >= 75) {
       return new Response(
         JSON.stringify({ error: "daily_limit", message: "You've reached today's limit — resets at midnight." }),
-        { status: 429, headers: { "Content-Type": "application/json" } }
+        { status: 429, headers: { "Content-Type": "application/json", ...securityHeaders } }
       );
     }
   }
 
   const model = selectModel(requestType, hasPhoto, turnCount);
-  const maxTokens = MAX_TOKENS[requestType] ?? 500;
+  const maxTokens = MAX_TOKENS[requestType as keyof typeof MAX_TOKENS] ?? 500;
 
-  /* ── Build dynamic system block ── */
+  /* ── Build dynamic system block — sanitize all sessionState fields ── */
   const dynamicContext = [
     sessionState?.equipment?.brand &&
-      `Equipment: ${sessionState.equipment.brand} ${sessionState.equipment.model} (${sessionState.equipment.type})`,
+      `Equipment: ${sanitizeForPrompt(sessionState.equipment.brand)} ${sanitizeForPrompt(sessionState.equipment.model)} (${sanitizeForPrompt(sessionState.equipment.type)})`,
     sessionState?.symptoms?.length &&
-      `Reported symptoms: ${sessionState.symptoms.join(", ")}`,
+      `Reported symptoms: ${sanitizeForPrompt(sessionState.symptoms.join(", "))}`,
     sessionState?.ruled_out?.length &&
-      `Ruled out: ${sessionState.ruled_out.join(", ")}`,
+      `Ruled out: ${sanitizeForPrompt(sessionState.ruled_out.join(", "))}`,
     sessionState?.working_diagnosis &&
-      `Working diagnosis: ${sessionState.working_diagnosis}`,
+      `Working diagnosis: ${sanitizeForPrompt(sessionState.working_diagnosis)}`,
     sessionState?.photos_received?.length &&
       `Photos received: ${sessionState.photos_received.length}`,
   ]
@@ -126,7 +136,7 @@ export async function POST(request: NextRequest) {
   let webSpecsContext: string | null = null;
   let webManualUrls: { type: string; url: string; title: string }[] = [];
 
-  if (hasPhoto && process.env.BRAVE_SEARCH_API_KEY) {
+  if (hasPhoto && braveKey) {
     const lastImgMsg = [...messages].reverse().find(
       (m: { role: string; image_base64?: string }) => m.role === "user" && m.image_base64
     );
@@ -140,12 +150,16 @@ export async function POST(request: NextRequest) {
         // v3 suffix: busts cached results that used full model strings instead of base model
         const cacheKey = `${extracted.brand}__${extracted.model}__v3`.toLowerCase().replace(/\s+/g, "_");
 
+        // 7-day TTL: ignore stale cache entries
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
         // Check Supabase cache first — avoid paying for repeat searches
         const { data: cached } = await supabaseAdmin
           .from("manual_searches")
           .select("manual_urls")
           .eq("model_number", cacheKey)
           .eq("brand", "__system_cache__")
+          .gt("search_date", sevenDaysAgo)
           .maybeSingle();
 
         if (cached?.manual_urls) {
@@ -213,7 +227,7 @@ export async function POST(request: NextRequest) {
     console.error("Anthropic API error:", anthropicRes.status, errorText);
     return new Response(
       JSON.stringify({ error: "Anthropic API error", details: errorText }),
-      { status: anthropicRes.status, headers: { "Content-Type": "application/json" } }
+      { status: anthropicRes.status, headers: { "Content-Type": "application/json", ...securityHeaders } }
     );
   }
 
@@ -281,7 +295,7 @@ export async function POST(request: NextRequest) {
         /* Log usage to Supabase + console */
         if (inputTokens || outputTokens) {
           const costEstimate =
-            model === MODEL_SONNET
+            model === AI_MODELS.SONNET
               ? inputTokens * 0.000003 + outputTokens * 0.000015
               : inputTokens * 0.0000008 + outputTokens * 0.000004;
 
@@ -314,6 +328,7 @@ export async function POST(request: NextRequest) {
       "Content-Type": "text/plain; charset=utf-8",
       "Transfer-Encoding": "chunked",
       "Cache-Control": "no-cache",
+      ...securityHeaders,
     },
   });
 }

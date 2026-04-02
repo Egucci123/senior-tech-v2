@@ -10,6 +10,7 @@ import {
 } from '@/lib/supabase';
 import type { User } from '@/types';
 import type { Session } from '@supabase/supabase-js';
+import { clearManuals } from './useManuals';
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
@@ -77,6 +78,7 @@ export function useAuth() {
   }, []);
 
   const signOut = useCallback(async () => {
+    clearManuals();
     const result = await supaSignOut();
     setUser(null);
     setSession(null);

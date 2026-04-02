@@ -1,8 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error("[Supabase] Missing env vars: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY");
+}
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // ────────────────────────────────────────────
@@ -104,12 +106,14 @@ export async function createDiagnosticSession(userId: string) {
 
 export async function updateDiagnosticSession(
   sessionId: string,
-  updates: Record<string, unknown>
+  updates: Record<string, unknown>,
+  userId: string
 ) {
   return supabase
     .from("diagnostic_sessions")
     .update(updates)
     .eq("id", sessionId)
+    .eq("user_id", userId)
     .select()
     .single();
 }
@@ -215,13 +219,13 @@ export async function createManualSearch(
     .single();
 }
 
-export async function getManualSearches(userId: string) {
+export async function getManualSearches(userId: string, limit = 20, offset = 0) {
   return supabase
     .from("manual_searches")
     .select("*")
     .eq("user_id", userId)
     .order("search_date", { ascending: false })
-    .limit(10);
+    .range(offset, offset + limit - 1);
 }
 
 // ────────────────────────────────────────────

@@ -30,6 +30,12 @@ export interface ChatMessage {
   content: string;
   image_url?: string;
   timestamp: string;
+  metadata?: {
+    requestType?: "photo" | "complex" | "simple";
+    modelUsed?: string;
+    inputTokens?: number;
+    outputTokens?: number;
+  };
 }
 
 // ── Session State (AI diagnostic context) ──
@@ -71,6 +77,7 @@ export interface DiagnosticSession {
   checklist: string;
   manual_ids_referenced: string[];
   session_state: SessionState;
+  conversation_version?: number;
 }
 
 // ── User Acknowledgment ──

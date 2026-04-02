@@ -48,6 +48,9 @@ export function isSameModel(a: string, b: string): boolean {
   const ka = normalizeModelForCompare(a);
   const kb = normalizeModelForCompare(b);
   if (ka === kb) return true;
-  // One is the prefix of the other — full model vs base model
-  return ka.startsWith(kb) || kb.startsWith(ka);
+  // Longer must start with shorter, AND next char must be non-alphanumeric boundary
+  const [longer, shorter] = ka.length >= kb.length ? [ka, kb] : [kb, ka];
+  if (!longer.startsWith(shorter)) return false;
+  const nextChar = longer[shorter.length];
+  return !nextChar || !/[a-z0-9]/.test(nextChar);
 }
