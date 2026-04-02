@@ -137,11 +137,36 @@ export async function POST(request: NextRequest) {
         apiKey
       );
       if (extracted?.brand && extracted?.model) {
-        console.log(`[WEB LOOKUP] ${extracted.brand} ${extracted.model}`);
-        const result = await fetchBraveSpecs(extracted.brand, extracted.model);
-        if (result) {
-          webSpecsContext = result.specsContext;
-          webManualUrls = result.manualUrls;
+        const cacheKey = `${extracted.brand}__${extracted.model}`.toLowerCase().replace(/\s+/g, "_");
+
+        // Check Supabase cache first — avoid paying for repeat searches
+        const { data: cached } = await supabaseAdmin
+          .from("manual_searches")
+          .select("manual_urls")
+          .eq("model_number", cacheKey)
+          .eq("brand", "__system_cache__")
+          .maybeSingle();
+
+        if (cached?.manual_urls) {
+          console.log(`[WEB LOOKUP] Cache hit: ${cacheKey}`);
+          const parsed = cached.manual_urls as { specsContext: string; manualUrls: { type: string; url: string; title: string }[] };
+          webSpecsContext = parsed.specsContext;
+          webManualUrls = parsed.manualUrls;
+        } else {
+          console.log(`[WEB LOOKUP] Fetching: ${extracted.brand} ${extracted.model}`);
+          const result = await fetchBraveSpecs(extracted.brand, extracted.model);
+          if (result) {
+            webSpecsContext = result.specsContext;
+            webManualUrls = result.manualUrls;
+            // Cache result for all future techs searching this model
+            supabaseAdmin.from("manual_searches").insert({
+              user_id: userId || "00000000-0000-0000-0000-000000000000",
+              model_number: cacheKey,
+              brand: "__system_cache__",
+              search_date: new Date().toISOString(),
+              manual_urls: { specsContext: result.specsContext, manualUrls: result.manualUrls },
+            }).then(() => {}, () => {});
+          }
         }
       }
     }
