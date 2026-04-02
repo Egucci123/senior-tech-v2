@@ -12,6 +12,30 @@ interface ManualsScreenProps {
   userId?: string;
 }
 
+/** Score a manual entry — higher = better quality links (OEM PDF > ManualsLib page > search) */
+function scoreManual(m: ManualSearch): number {
+  return m.manual_urls.reduce((score, u) => {
+    if (u.source === 1) return score + 3;
+    if (u.url.endsWith(".pdf") || u.url.includes(".pdf?") || u.url.includes("/pdf/")) return score + 3;
+    if (u.source === 2) return score + 1;
+    if (u.url.includes("manualslib.com") && !u.url.includes("/search/")) return score + 1;
+    return score;
+  }, 0);
+}
+
+/** Keep only the best entry per model number */
+function deduplicateByModel(manuals: ManualSearch[]): ManualSearch[] {
+  const best = new Map<string, ManualSearch>();
+  for (const m of manuals) {
+    const key = m.model_number.toLowerCase();
+    const existing = best.get(key);
+    if (!existing || scoreManual(m) > scoreManual(existing)) {
+      best.set(key, m);
+    }
+  }
+  return Array.from(best.values());
+}
+
 export default function ManualsScreen({ sharedManuals = [], userId }: ManualsScreenProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [localManuals, setLocalManuals] = useState<ManualSearch[]>([]);
@@ -25,21 +49,23 @@ export default function ManualsScreen({ sharedManuals = [], userId }: ManualsScr
     getManualSearches(userId)
       .then(({ data, error }) => {
         if (!error && data) {
-          setDbManuals(data as ManualSearch[]);
+          // Deduplicate within DB results — keep best entry per model
+          setDbManuals(deduplicateByModel(data as ManualSearch[]));
         }
       })
       .catch((e) => console.error("Failed to load manuals from DB:", e));
   }, [userId]);
 
-  // Merge: auto-found from diagnostics first, then DB manuals, then manually searched
+  // Merge all sources — deduplicate across them, best entry wins
+  const sharedDeduped = deduplicateByModel(sharedManuals);
   const allManuals = [
-    ...sharedManuals,
-    ...dbManuals.filter(
-      (dm) => !sharedManuals.some((sm) => sm.model_number.toLowerCase() === dm.model_number.toLowerCase())
+    ...sharedDeduped,
+    ...deduplicateByModel(dbManuals).filter(
+      (dm) => !sharedDeduped.some((sm) => sm.model_number.toLowerCase() === dm.model_number.toLowerCase())
     ),
-    ...localManuals.filter(
+    ...deduplicateByModel(localManuals).filter(
       (lm) =>
-        !sharedManuals.some((sm) => sm.model_number.toLowerCase() === lm.model_number.toLowerCase()) &&
+        !sharedDeduped.some((sm) => sm.model_number.toLowerCase() === lm.model_number.toLowerCase()) &&
         !dbManuals.some((dm) => dm.model_number.toLowerCase() === lm.model_number.toLowerCase())
     ),
   ];

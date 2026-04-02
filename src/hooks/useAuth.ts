@@ -17,19 +17,33 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Safety timeout: never stay loading more than 5 seconds
+    const timeout = setTimeout(() => setLoading(false), 5000);
+
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        // Fetch user profile from users table
-        getUserProfile(session.user.id).then(({ data }) => {
-          if (data) setUser(data as User);
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        if (session?.user) {
+          getUserProfile(session.user.id)
+            .then(({ data }) => {
+              if (data) setUser(data as User);
+              clearTimeout(timeout);
+              setLoading(false);
+            })
+            .catch(() => {
+              clearTimeout(timeout);
+              setLoading(false);
+            });
+        } else {
+          clearTimeout(timeout);
           setLoading(false);
-        });
-      } else {
+        }
+      })
+      .catch(() => {
+        clearTimeout(timeout);
         setLoading(false);
-      }
-    });
+      });
 
     // Listen for auth changes
     const {
@@ -37,14 +51,21 @@ export function useAuth() {
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       if (session?.user) {
-        const { data } = await getUserProfile(session.user.id);
-        if (data) setUser(data as User);
+        try {
+          const { data } = await getUserProfile(session.user.id);
+          if (data) setUser(data as User);
+        } catch {
+          /* noop */
+        }
       } else {
         setUser(null);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {

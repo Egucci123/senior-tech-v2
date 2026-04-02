@@ -22,8 +22,9 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase, updateUserProfile } from '@/lib/supabase';
+import { supabase, updateUserProfile, deleteAllDiagnosticSessions, deleteAllManualSearches } from '@/lib/supabase';
+import type { User } from '@/types';
+import type { Session } from '@supabase/supabase-js';
 
 /* ------------------------------------------------------------------ */
 /*  Toggle                                                            */
@@ -210,9 +211,14 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 /* ------------------------------------------------------------------ */
 /*  ProfileScreen                                                     */
 /* ------------------------------------------------------------------ */
-export default function ProfileScreen() {
+interface ProfileScreenProps {
+  user: User | null;
+  session: Session | null;
+  signOut: () => Promise<unknown>;
+}
+
+export default function ProfileScreen({ user, session, signOut }: ProfileScreenProps) {
   const router = useRouter();
-  const { session, user, loading, signOut } = useAuth();
 
   /* ---- local toggle / settings state ---- */
   const [highContrast, setHighContrast] = useState(false);
@@ -237,54 +243,38 @@ export default function ProfileScreen() {
     [session]
   );
 
-  const handleClearCache = useCallback(() => {
+  const handleClearCache = useCallback(async () => {
+    if (clearingCache) return;
     setClearingCache(true);
     try {
-      // Clear diagnostic-related localStorage items
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (key.startsWith('senior_tech_') || key.startsWith('diagnostic_'))) {
-          keysToRemove.push(key);
+      // user?.id = users table UUID — matches user_id on diagnostic_sessions and manual_searches
+      const uid = user?.id;
+      // Clear localStorage
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('senior_tech_') || key.startsWith('diagnostic_'))) {
+            keysToRemove.push(key);
+          }
         }
+        keysToRemove.forEach((key) => localStorage.removeItem(key));
+      } catch { /* noop */ }
+      // Clear Supabase DB — diagnostic sessions + manual searches
+      if (uid) {
+        await Promise.all([
+          deleteAllDiagnosticSessions(uid),
+          deleteAllManualSearches(uid),
+        ]);
       }
-      keysToRemove.forEach((key) => localStorage.removeItem(key));
     } catch {
       /* noop */
+    } finally {
+      setTimeout(() => setClearingCache(false), 1000);
     }
-    setTimeout(() => setClearingCache(false), 1000);
-  }, []);
+  }, [clearingCache, user]);
 
-  if (loading) {
-    return (
-      <div className="px-4 pt-20 pb-24 max-w-lg mx-auto flex items-center justify-center min-h-[50vh]">
-        <span className="font-headline font-bold text-xs uppercase tracking-widest text-outline animate-pulse">
-          LOADING...
-        </span>
-      </div>
-    );
-  }
-
-  // Not loading but no session — show sign-in prompt with sign-out option
-  if (!session) {
-    return (
-      <div className="px-4 pt-20 pb-24 max-w-lg mx-auto flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <span className="font-headline font-bold text-xs uppercase tracking-widest text-outline">
-          NOT SIGNED IN
-        </span>
-        <p className="font-body text-sm text-outline text-center">
-          Sign in to view and manage your profile settings.
-        </p>
-        <button
-          onClick={handleSignOut}
-          className="mt-2 h-11 px-6 rounded-lg border border-error/40 font-headline font-bold text-sm uppercase tracking-wider text-error transition-colors active:bg-error/10 flex items-center justify-center gap-2"
-        >
-          <LogOut className="w-4 h-4" />
-          GO TO SIGN IN
-        </button>
-      </div>
-    );
-  }
+  // page.tsx already gates on session — if we're here, user is signed in
 
   const initials =
     ((user?.first_name?.[0] ?? '') + (user?.last_name?.[0] ?? '')).toUpperCase() || 'ST';
@@ -411,7 +401,8 @@ export default function ProfileScreen() {
         <Divider />
         <SettingRow
           icon={Trash2}
-          label="Clear Diagnostic Cache"
+          label="Wipe History & Cache"
+          sub="Clears all sessions, manuals, and local data"
           onClick={handleClearCache}
           right={
             <span className="font-headline font-bold text-xs uppercase tracking-wider text-primary-container">

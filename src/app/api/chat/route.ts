@@ -137,7 +137,8 @@ export async function POST(request: NextRequest) {
         apiKey
       );
       if (extracted?.brand && extracted?.model) {
-        const cacheKey = `${extracted.brand}__${extracted.model}`.toLowerCase().replace(/\s+/g, "_");
+        // v2 suffix: busts old cached results that used Brave search page fallbacks
+        const cacheKey = `${extracted.brand}__${extracted.model}__v2`.toLowerCase().replace(/\s+/g, "_");
 
         // Check Supabase cache first — avoid paying for repeat searches
         const { data: cached } = await supabaseAdmin
@@ -149,7 +150,7 @@ export async function POST(request: NextRequest) {
 
         if (cached?.manual_urls) {
           console.log(`[WEB LOOKUP] Cache hit: ${cacheKey}`);
-          const parsed = cached.manual_urls as { specsContext: string; manualUrls: { type: string; url: string; title: string }[] };
+          const parsed = cached.manual_urls as { specsContext: string; manualUrls: { type: string; url: string; title: string; source?: number }[] };
           webSpecsContext = parsed.specsContext;
           webManualUrls = parsed.manualUrls;
         } else {

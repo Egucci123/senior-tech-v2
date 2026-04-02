@@ -1,8 +1,12 @@
 /**
  * Web-based model spec lookup for Senior Tech.
- * Step 1: Haiku extracts brand/model from image (cheap, fast)
- * Step 2: Brave Search fetches real manufacturer specs
- * Both fail gracefully — app works without them.
+ *
+ * MANUAL SOURCE PRIORITY:
+ *   1. ManualsLib product page  — most reliable, every major HVAC brand covered
+ *   2. Manufacturer direct PDF  — OEM domain, opens PDF directly
+ *   3. ManualsLib search URL    — guaranteed fallback, always a live link
+ *
+ * SPEC CONTEXT: Manufacturer domain + spec results fed to Sonnet as ground truth.
  */
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
@@ -54,26 +58,18 @@ export async function extractModelFromImage(
     const data = await res.json();
     const text: string = data?.content?.[0]?.text?.trim() ?? "";
 
-    // Try direct parse
     let parsed: ExtractedModel | null = null;
     try {
-      // Strip markdown fences if present
       const clean = text.replace(/```json\n?|\n?```/g, "").trim();
       parsed = JSON.parse(clean);
     } catch {
-      // Try extracting JSON object from any surrounding text
       const match = text.match(/\{[\s\S]*?\}/);
       if (match) {
-        try {
-          parsed = JSON.parse(match[0]);
-        } catch {
-          return null;
-        }
+        try { parsed = JSON.parse(match[0]); } catch { return null; }
       }
     }
 
     if (!parsed) return null;
-
     return {
       brand: parsed.brand || "",
       model: parsed.model || "",
@@ -95,39 +91,118 @@ export interface BraveResult {
 
 export interface BraveLookupResult {
   specsContext: string;
-  manualUrls: { type: string; url: string; title: string }[];
+  manualUrls: { type: string; url: string; title: string; source: 1 | 2 | 3 }[];
 }
 
-function classifyManualUrl(title: string, url: string): string | null {
-  const t = (title + " " + url).toLowerCase();
-  if (t.includes("install") || t.includes("setup") || t.includes("/iom/")) return "INSTALL";
-  if (t.includes("service") || t.includes("technical") || t.includes("repair") || t.includes("/technical/") || t.includes("/lit/")) return "SERVICE";
-  if (t.includes("wiring") || t.includes("schematic") || t.includes("diagram")) return "WIRING";
-  if (t.includes("parts") || t.includes("catalog") || t.includes("iom")) return "PARTS";
-  if (t.includes(".pdf") || t.includes("/pdf/") || t.includes("manual") || t.includes("guide")) return "INSTALL";
+/* ── Manufacturer documentation domains ── */
+const BRAND_DOC_DOMAINS: Record<string, string> = {
+  york: "cgproducts.johnsoncontrols.com",
+  "johnson controls": "cgproducts.johnsoncontrols.com",
+  jci: "cgproducts.johnsoncontrols.com",
+  coleman: "cgproducts.johnsoncontrols.com",
+  luxaire: "cgproducts.johnsoncontrols.com",
+  fraser: "cgproducts.johnsoncontrols.com",
+  carrier: "carrier.com",
+  bryant: "bryant.com",
+  payne: "payne-ac.com",
+  heil: "heil-hvac.com",
+  tempstar: "tempstar.com",
+  comfortmaker: "comfortmaker.com",
+  arcoaire: "arcoaire.com",
+  keeprite: "keepriterefrigeration.com",
+  icp: "icpusa.com",
+  "international comfort": "icpusa.com",
+  trane: "trane.com",
+  "american standard": "americanstandardair.com",
+  lennox: "lennoxpros.com",
+  "dave lennox": "lennoxpros.com",
+  ducane: "lennoxpros.com",
+  goodman: "goodmanmfg.com",
+  amana: "amana-hac.com",
+  daikin: "daikinac.com",
+  rheem: "rheem.com",
+  ruud: "ruud.com",
+  "weather king": "rheem.com",
+  nordyne: "nordyne.com",
+  frigidaire: "nordyne.com",
+  gibson: "nordyne.com",
+  westinghouse: "nordyne.com",
+  maytag: "nordyne.com",
+  intertherm: "nordyne.com",
+  miller: "nordyne.com",
+  bosch: "bosch-climate.com",
+  mitsubishi: "mehvac.com",
+  fujitsu: "fujitsugeneral.com",
+  lg: "lghvac.com",
+  "weil-mclain": "weil-mclain.com",
+  navien: "navieninc.com",
+  rinnai: "rinnai.us",
+  lochinvar: "lochinvar.com",
+  "bradford white": "bradfordwhite.com",
+  "ao smith": "hotwater.com",
+  "a.o. smith": "hotwater.com",
+};
+
+function getBrandDocDomain(brand: string): string | null {
+  const lower = brand.toLowerCase().trim();
+  for (const [key, domain] of Object.entries(BRAND_DOC_DOMAINS)) {
+    if (lower.includes(key) || key.includes(lower)) return domain;
+  }
   return null;
 }
 
-/** Returns true if the URL is likely a direct PDF link */
 function isDirectPdf(url: string): boolean {
   const u = url.toLowerCase();
   return u.endsWith(".pdf") || u.includes("/pdf/") || u.includes(".pdf?");
 }
 
+function classifyManualUrl(title: string, url: string): string | null {
+  const t = (title + " " + url).toLowerCase();
+  if (t.includes("wiring") || t.includes("schematic") || t.includes("diagram")) return "WIRING";
+  if (t.includes("parts") || t.includes("catalog") || t.includes("exploded")) return "PARTS";
+  if (
+    t.includes("service") || t.includes("technical") || t.includes("repair") ||
+    t.includes("troubleshoot") || t.includes("diagnostic") || t.includes("/sm/")
+  ) return "SERVICE";
+  if (
+    t.includes("install") || t.includes("setup") || t.includes("iom") ||
+    t.includes("owner") || t.includes("operation") || t.includes("/im/")
+  ) return "INSTALL";
+  if (t.includes(".pdf") || t.includes("/pdf/") || t.includes("manual") || t.includes("guide")) return "INSTALL";
+  if (isDirectPdf(url)) return "INSTALL";
+  return null;
+}
+
 async function braveSearch(query: string, key: string, count = 6): Promise<BraveResult[]> {
-  const res = await fetch(
-    `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${count}`,
-    {
-      headers: {
-        Accept: "application/json",
-        "Accept-Encoding": "gzip",
-        "X-Subscription-Token": key,
-      },
-    }
-  );
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data?.web?.results ?? [];
+  try {
+    const res = await fetch(
+      `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${count}`,
+      {
+        headers: {
+          Accept: "application/json",
+          "Accept-Encoding": "gzip",
+          "X-Subscription-Token": key,
+        },
+      }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data?.web?.results ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** ManualsLib search URL — always a live link regardless of what Brave returns */
+function manualsLibSearch(brand: string, model: string, type: string): string {
+  const suffixMap: Record<string, string> = {
+    INSTALL: "installation manual",
+    SERVICE: "service manual",
+    WIRING: "wiring diagram",
+    PARTS: "parts catalog",
+  };
+  const q = encodeURIComponent(`${brand} ${model} ${suffixMap[type] ?? "manual"}`);
+  return `https://www.manualslib.com/search/?q=${q}`;
 }
 
 export async function fetchBraveSpecs(
@@ -137,56 +212,75 @@ export async function fetchBraveSpecs(
   const key = process.env.BRAVE_SEARCH_API_KEY;
   if (!key || !brand || !model) return null;
 
+  const mfrDomain = getBrandDocDomain(brand);
+
   try {
-    // Three parallel searches: specs, manual pages, and direct PDF files
-    const [specResults, manualResults, pdfResults] = await Promise.all([
-      braveSearch(`${brand} ${model} inducer motor voltage specifications technical data service`, key, 6),
-      braveSearch(`${brand} ${model} installation service manual filetype:pdf`, key, 6),
-      braveSearch(`${brand} ${model} filetype:pdf`, key, 8),
+    // Two parallel searches:
+    // A — ManualsLib: reliable product pages for every brand
+    // B — Manufacturer domain PDFs: direct OEM files when available
+    // C — Spec data: feeds AI context only
+    const [manualsLibResults, mfrResults, specResults] = await Promise.all([
+      braveSearch(`site:manualslib.com ${brand} ${model}`, key, 6),
+      mfrDomain
+        ? braveSearch(`site:${mfrDomain} ${model} filetype:pdf`, key, 8)
+        : braveSearch(`${brand} ${model} filetype:pdf service installation`, key, 6),
+      braveSearch(`${brand} ${model} specifications technical data voltage`, key, 5),
     ]);
 
-    if (!specResults.length && !manualResults.length && !pdfResults.length) return null;
+    if (!manualsLibResults.length && !mfrResults.length && !specResults.length) return null;
 
-    // Build spec context for Sonnet
-    const specLines = specResults
-      .slice(0, 3)
+    // ── Spec context for AI ────────────────────────────────────────
+    const specSources = [...mfrResults.slice(0, 2), ...specResults.slice(0, 3)];
+    const specLines = specSources
       .map((r, i) => `${i + 1}. ${r.title}\n   ${r.description ?? ""}\n   ${r.url}`)
       .join("\n");
-
     const specsContext = specLines
       ? `WEB-VERIFIED SPECS — ${brand} ${model}:\n${specLines}\n\nCRITICAL: Use these web results as your PRIMARY source for this specific model. Your training data may have wrong specs for this exact unit. If inducer voltage, board type, capacitor setup, or any electrical spec is mentioned in these results — use that, not your default assumption. If a spec is NOT in these results and NOT visible in the photo — say "I need to verify that for this exact model" rather than guessing.`
       : "";
 
-    // Merge manual results: prefer direct PDFs first, then general manual pages
-    // Direct PDFs from the pdf search are highest priority
-    const directPdfs = pdfResults.filter((r) => isDirectPdf(r.url));
-    const allManualCandidates = [...directPdfs, ...manualResults, ...pdfResults];
-
+    // ── Build manual URLs ─────────────────────────────────────────
     const seen = new Set<string>();
-    const manualUrls: { type: string; url: string; title: string }[] = [];
+    const manualUrls: BraveLookupResult["manualUrls"] = [];
 
-    for (const r of allManualCandidates) {
-      const type = classifyManualUrl(r.title, r.url);
-      if (type && !seen.has(type)) {
+    // SOURCE 1 — ManualsLib product/manual pages
+    // Best ManualsLib result: product page preferred over generic pages
+    const manualsLibPage =
+      manualsLibResults.find((r) => r.url.includes("/products/")) ||
+      manualsLibResults.find((r) => r.url.includes("/manual/")) ||
+      manualsLibResults[0];
+
+    if (manualsLibPage) {
+      for (const type of ["INSTALL", "SERVICE", "WIRING", "PARTS"]) {
         seen.add(type);
-        manualUrls.push({ type, url: r.url, title: r.title });
+        manualUrls.push({ type, url: manualsLibPage.url, title: manualsLibPage.title, source: 1 });
       }
     }
 
-    // Fill any missing types — prefer a search-results page URL as fallback over nothing
-    const allTypes = ["INSTALL", "SERVICE", "WIRING", "PARTS"];
-    const gq = encodeURIComponent(`${brand} ${model}`);
-    for (const type of allTypes) {
+    // SOURCE 2 — Manufacturer direct PDFs (supplement ManualsLib, don't replace)
+    // If we find a specific type PDF from OEM, upgrade that button to the direct PDF
+    const directPdfs = mfrResults.filter((r) => isDirectPdf(r.url));
+    for (const r of directPdfs) {
+      const type = classifyManualUrl(r.title, r.url);
+      if (type) {
+        // Replace the ManualsLib link for this type with the direct OEM PDF
+        const idx = manualUrls.findIndex((m) => m.type === type);
+        if (idx >= 0) {
+          manualUrls[idx] = { type, url: r.url, title: r.title, source: 2 };
+        } else {
+          manualUrls.push({ type, url: r.url, title: r.title, source: 2 });
+          seen.add(type);
+        }
+      }
+    }
+
+    // SOURCE 3 — ManualsLib search URL for any type still missing
+    for (const type of ["INSTALL", "SERVICE", "WIRING", "PARTS"]) {
       if (!seen.has(type)) {
-        // Use Brave search results page as fallback (better than a blind Google query)
-        const suffix = type === "INSTALL" ? "installation+manual+filetype:pdf"
-          : type === "SERVICE" ? "service+manual+filetype:pdf"
-          : type === "WIRING" ? "wiring+diagram+filetype:pdf"
-          : "parts+catalog+filetype:pdf";
         manualUrls.push({
           type,
-          url: `https://search.brave.com/search?q=${gq}+${suffix}`,
-          title: `${brand} ${model} ${type.toLowerCase()} manual`,
+          url: manualsLibSearch(brand, model, type),
+          title: `Search ManualsLib: ${brand} ${model}`,
+          source: 3,
         });
       }
     }

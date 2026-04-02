@@ -162,6 +162,20 @@ export async function getDiagnosticSession(sessionId: string) {
     .single();
 }
 
+export async function deleteAllDiagnosticSessions(userId: string) {
+  return supabase
+    .from("diagnostic_sessions")
+    .delete()
+    .eq("user_id", userId);
+}
+
+export async function deleteAllManualSearches(userId: string) {
+  return supabase
+    .from("manual_searches")
+    .delete()
+    .eq("user_id", userId);
+}
+
 // ────────────────────────────────────────────
 // Manual searches (table: manual_searches)
 // ────────────────────────────────────────────
@@ -172,6 +186,23 @@ export async function createManualSearch(
   brand: string,
   manualUrls: { type: string; url: string }[]
 ) {
+  // Check for existing entry — one row per user+model, update if exists
+  const { data: existing } = await supabase
+    .from("manual_searches")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("model_number", modelNumber)
+    .maybeSingle();
+
+  if (existing?.id) {
+    return supabase
+      .from("manual_searches")
+      .update({ brand, manual_urls: manualUrls, search_date: new Date().toISOString() })
+      .eq("id", existing.id)
+      .select()
+      .single();
+  }
+
   return supabase
     .from("manual_searches")
     .insert({

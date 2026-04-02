@@ -13,7 +13,7 @@ import { useManuals } from "@/hooks/useManuals";
 
 export default function MainApp() {
   const router = useRouter();
-  const { session, user, loading } = useAuth();
+  const { session, user, loading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("diagnose");
   const { manuals, hasNew, clearNew } = useManuals();
 
@@ -51,15 +51,28 @@ export default function MainApp() {
     <div className="min-h-screen">
       {!isDiagnose && <Header />}
       <main>
-        {/* ChatInterface is ALWAYS mounted — hidden via CSS when not on diagnose tab */}
-        <div style={{ display: activeTab === "diagnose" ? "block" : "none" }} className="fixed inset-0 top-0 bottom-16 z-10">
+        {/*
+          ChatInterface is ALWAYS mounted to preserve chat state.
+          Use visibility+pointer-events instead of display:none to avoid
+          expensive layout recalculations on every tab switch.
+        */}
+        <div
+          className="fixed inset-0 bottom-16 z-10"
+          style={isDiagnose ? undefined : { visibility: "hidden", pointerEvents: "none" }}
+        >
           <ChatInterface user={user} />
         </div>
 
-        {/* Other tabs render normally */}
-        {activeTab === "manuals" && <ManualsScreen sharedManuals={manuals} userId={user?.id} />}
-        {activeTab === "history" && <HistoryScreen userId={user?.id} />}
-        {activeTab === "settings" && <ProfileScreen />}
+        {/* Other tabs — mount/unmount normally, no freeze risk */}
+        {activeTab === "manuals" && (
+          <ManualsScreen sharedManuals={manuals} userId={user?.id} />
+        )}
+        {activeTab === "history" && (
+          <HistoryScreen userId={user?.id} />
+        )}
+        {activeTab === "settings" && (
+          <ProfileScreen user={user} session={session} signOut={signOut} />
+        )}
       </main>
       <BottomNav
         activeTab={activeTab}

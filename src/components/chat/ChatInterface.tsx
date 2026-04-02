@@ -28,37 +28,24 @@ interface ChatInterfaceProps {
   user?: User | null;
 }
 
-/* ── Summary Modal ── */
+/* ── Service Notes Modal ── */
 interface SummaryModalProps {
-  summary: string;
-  checklist: string;
+  notes: string;
   onClose: () => void;
 }
 
-function SummaryModal({ summary, checklist, onClose }: SummaryModalProps) {
+function SummaryModal({ notes, onClose }: SummaryModalProps) {
   const [copied, setCopied] = useState(false);
-
-  const fullText = [
-    "JOB SUMMARY",
-    "===========",
-    summary,
-    "",
-    "CLOSE-OUT CHECKLIST",
-    "===================",
-    checklist,
-  ]
-    .filter(Boolean)
-    .join("\n");
 
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(fullText);
+      await navigator.clipboard.writeText(notes);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       /* noop */
     }
-  }, [fullText]);
+  }, [notes]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 px-0 pb-0">
@@ -66,39 +53,25 @@ function SummaryModal({ summary, checklist, onClose }: SummaryModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-outline-variant/20">
           <span className="font-headline font-bold text-xs uppercase tracking-widest text-primary-container">
-            JOB SUMMARY
+            SERVICE NOTES
           </span>
           <button
             onClick={onClose}
             className="text-outline hover:text-on-surface transition-colors"
-            aria-label="Close summary"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-          {summary && (
-            <div>
-              <p className="font-headline font-bold text-[10px] uppercase tracking-widest text-outline mb-2">
-                DIAGNOSTIC SUMMARY
-              </p>
-              <p className="font-body text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
-                {summary}
-              </p>
-            </div>
-          )}
-          {checklist && (
-            <div>
-              <p className="font-headline font-bold text-[10px] uppercase tracking-widest text-outline mb-2">
-                CLOSE-OUT CHECKLIST
-              </p>
-              <p className="font-body text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
-                {checklist}
-              </p>
-            </div>
-          )}
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          <p className="font-headline font-bold text-[10px] uppercase tracking-widest text-outline mb-3">
+            COPY INTO YOUR WORK ORDER
+          </p>
+          <p className="font-body text-sm text-on-surface leading-relaxed whitespace-pre-wrap">
+            {notes}
+          </p>
         </div>
 
         {/* Footer */}
@@ -140,10 +113,7 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
 
   const [input, setInput] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
-  const [summaryModal, setSummaryModal] = useState<{
-    summary: string;
-    checklist: string;
-  } | null>(null);
+  const [summaryModal, setSummaryModal] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -201,10 +171,7 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
   );
 
   const handleSummarize = useCallback(async () => {
-    if (summaryLoading) return;
-
-    // Need at least some messages to summarize
-    if (messages.length === 0) return;
+    if (summaryLoading || messages.length === 0) return;
 
     setSummaryLoading(true);
     try {
@@ -213,26 +180,14 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
         content: m.content,
       }));
 
-      const [summaryRes, checklistRes] = await Promise.all([
-        fetch("/api/summary", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ conversation, type: "summary" }),
-        }),
-        fetch("/api/summary", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ conversation, type: "checklist" }),
-        }),
-      ]);
-
-      const summaryData = summaryRes.ok ? await summaryRes.json() : { result: "" };
-      const checklistData = checklistRes.ok ? await checklistRes.json() : { result: "" };
-
-      setSummaryModal({
-        summary: summaryData.result || "",
-        checklist: checklistData.result || "",
+      const res = await fetch("/api/summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversation }),
       });
+
+      const data = res.ok ? await res.json() : { result: "" };
+      setSummaryModal(data.result || "");
     } catch {
       /* noop */
     } finally {
@@ -249,8 +204,7 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
 
       {summaryModal && (
         <SummaryModal
-          summary={summaryModal.summary}
-          checklist={summaryModal.checklist}
+          notes={summaryModal}
           onClose={() => setSummaryModal(null)}
         />
       )}

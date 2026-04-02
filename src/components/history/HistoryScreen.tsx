@@ -108,9 +108,17 @@ export default function HistoryScreen({ userId, onResumeSession }: HistoryScreen
 
     setLoading(true);
     setFetchError(false);
+
+    // Safety timeout: stop spinning after 6 seconds
+    const timeout = setTimeout(() => {
+      setLoading(false);
+      setSessions([]);
+    }, 6000);
+
     try {
       const dbStatus = filterToDbStatus(activeFilter);
       const { data, error } = await getDiagnosticSessions(userId.trim(), dbStatus);
+      clearTimeout(timeout);
       if (error) {
         console.error("Failed to fetch diagnostic sessions:", error);
         setFetchError(true);
@@ -119,10 +127,12 @@ export default function HistoryScreen({ userId, onResumeSession }: HistoryScreen
         setSessions((data as DiagnosticSession[]) || []);
       }
     } catch (e) {
+      clearTimeout(timeout);
       console.error("Failed to fetch diagnostic sessions:", e);
       setFetchError(true);
       setSessions([]);
     } finally {
+      clearTimeout(timeout);
       setLoading(false);
     }
   }, [userId, activeFilter]);
@@ -186,14 +196,12 @@ export default function HistoryScreen({ userId, onResumeSession }: HistoryScreen
       {/* Session Cards */}
       {!loading && (
         <div className="flex flex-col gap-3">
-          {fetchError && (
+          {(fetchError || sessions.length === 0) && (
             <div className="text-center py-12">
               <p className="text-outline text-sm">No diagnostic history yet.</p>
-            </div>
-          )}
-          {!fetchError && sessions.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-outline text-sm">No diagnostic history yet.</p>
+              <p className="text-outline/60 text-xs mt-1">
+                Complete a diagnostic session — it will appear here automatically.
+              </p>
             </div>
           )}
 

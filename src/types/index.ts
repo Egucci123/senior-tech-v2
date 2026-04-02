@@ -90,7 +90,13 @@ export interface ManualSearch {
   model_number: string;
   brand: string;
   search_date: string;
-  manual_urls: { type: string; url: string }[];
+  manual_urls: {
+    type: string;
+    url: string;
+    title?: string;
+    /** 1 = manufacturer OEM portal, 2 = ManualsLib, 3 = ManualsLib search */
+    source?: 1 | 2 | 3;
+  }[];
 }
 
 // ── API Usage ──
