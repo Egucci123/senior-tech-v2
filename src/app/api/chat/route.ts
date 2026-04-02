@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { extractModelFromImage, fetchBraveSpecs } from "@/lib/model-spec-lookup";
 
 /* ── Server-side Supabase client for usage tracking ── */
 const supabaseAdmin = createClient(
@@ -121,6 +122,25 @@ export async function POST(request: NextRequest) {
   const firstName = body.firstName || "Tech";
   const experienceLevel = body.experienceLevel || "mid";
 
+  /* ── Web spec lookup for photo requests ── */
+  let webSpecsContext: string | null = null;
+  if (hasPhoto && process.env.BRAVE_SEARCH_API_KEY) {
+    const lastImgMsg = [...messages].reverse().find(
+      (m: { role: string; image_base64?: string }) => m.role === "user" && m.image_base64
+    );
+    if (lastImgMsg?.image_base64) {
+      const extracted = await extractModelFromImage(
+        lastImgMsg.image_base64,
+        lastImgMsg.image_media_type || "image/jpeg",
+        apiKey
+      );
+      if (extracted?.brand && extracted?.model) {
+        console.log(`[WEB LOOKUP] ${extracted.brand} ${extracted.model}`);
+        webSpecsContext = await fetchBraveSpecs(extracted.brand, extracted.model);
+      }
+    }
+  }
+
   /* ── System prompt with cache_control ── */
   const systemBlocks = [
     {
@@ -128,6 +148,7 @@ export async function POST(request: NextRequest) {
       text: STATIC_SYSTEM_PROMPT,
       cache_control: { type: "ephemeral" },
     },
+    ...(webSpecsContext ? [{ type: "text", text: webSpecsContext }] : []),
     {
       type: "text",
       text: getDynamicSystemPrompt(firstName, experienceLevel) +
