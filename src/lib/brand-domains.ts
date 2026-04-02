@@ -67,11 +67,11 @@ export function getBrandDocDomain(brand: string): string | null {
 const MANUALSLIB_BRAND_MAP: [string, string][] = [
   ["johnson controls", "York"],
   ["jci", "York"],
-  ["coleman hvac", "York"],
+  ["coleman", "York"],
   ["luxaire", "York"],
   ["fraser", "York"],
-  // Carrier family — each listed separately on ManualsLib
-  // Rheem family — Ruud has own listing
+  // Ruud is listed separately on ManualsLib (not under Rheem)
+  // Bryant, Payne each have their own ManualsLib listing
   // ICP brands — listed under their own name or "ICP"
 ];
 

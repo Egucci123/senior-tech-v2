@@ -13,7 +13,8 @@ export function buildManualUrls(
 ): { type: string; url: string; source: 3 }[] {
   const mlBrand = normalizeBrandForManualsLib(brand);
   const baseModel = getBaseModel(model);
-  const q = encodeURIComponent(`${mlBrand} ${baseModel} installation manual`.trim());
+  // ManualsLib prefers + for spaces; longer query avoids "too short or inconsistent" error
+  const q = `${mlBrand}+${baseModel}+hvac+installation+and+operation+manual`;
   return [
     {
       type: "INSTALL",

@@ -139,13 +139,14 @@ async function braveSearch(query: string, key: string, count = 6): Promise<Brave
 /** ManualsLib search URL using BASE model — always a live link */
 function manualsLibSearch(brand: string, baseModel: string, type: string): string {
   const suffixMap: Record<string, string> = {
-    INSTALL: "installation manual",
-    SERVICE: "service manual",
-    WIRING: "wiring diagram",
-    PARTS: "parts catalog",
+    INSTALL: "installation and operation manual",
+    SERVICE: "service and maintenance manual",
+    WIRING: "wiring diagram schematic",
+    PARTS: "parts list catalog",
   };
   const mlBrand = normalizeBrandForManualsLib(brand);
-  const q = encodeURIComponent(`${mlBrand} ${baseModel} ${suffixMap[type] ?? "manual"}`);
+  // ManualsLib prefers + for spaces; %20 can trigger "too short or inconsistent query"
+  const q = `${mlBrand}+${baseModel}+hvac+${(suffixMap[type] ?? "manual").replace(/\s+/g, "+")}`;
   return `https://www.manualslib.com/search/?q=${q}`;
 }
 
