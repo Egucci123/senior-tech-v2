@@ -1,28 +1,19 @@
 /**
- * Builds smart manual search URLs per brand.
- * Uses manufacturer documentation domains via Google site: search
- * for direct PDF hits rather than generic search engines.
+ * Builds a ManualsLib search URL for a given brand + model.
+ * Used as the fallback when Brave search hasn't run yet or returns nothing.
+ * ManualsLib is indexed by base model number and works for every major brand.
  */
-
-import { getBrandDocDomain } from "./brand-domains";
 
 export function buildManualUrls(
   brand: string,
   model: string
-): { type: string; url: string }[] {
-  const domain = getBrandDocDomain(brand);
-  const base = brand ? `${brand} ${model}` : model;
-
-  function makeUrl(suffix: string): string {
-    if (domain) {
-      const q = encodeURIComponent(`site:${domain} ${model} ${suffix}`);
-      return `https://www.google.com/search?q=${q}`;
-    }
-    const q = encodeURIComponent(`${base} ${suffix}`);
-    return `https://www.google.com/search?q=${q}`;
-  }
-
+): { type: string; url: string; source: 3 }[] {
+  const q = encodeURIComponent(`${brand} ${model} installation manual`.trim());
   return [
-    { type: "INSTALL", url: makeUrl("installation manual filetype:pdf") },
+    {
+      type: "INSTALL",
+      url: `https://www.manualslib.com/search/?q=${q}`,
+      source: 3,
+    },
   ];
 }
