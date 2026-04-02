@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, BookOpen } from "lucide-react";
 import type { ManualSearch } from "@/types";
 
 interface ManualCardProps {
@@ -8,26 +8,19 @@ interface ManualCardProps {
   onDelete: (id: string) => void;
 }
 
-const pillColors: Record<string, string> = {
-  INSTALL: "text-[#4fc3f7]",
-  SERVICE: "text-[#69cc69]",
-  PARTS:   "text-[#ffb74d]",
-  WIRING:  "text-[#ce93d8]",
-};
-
 /** Infer source tier from URL when the source field is missing (legacy cached data) */
 function inferSource(url: string): 1 | 2 | 3 {
   const u = url.toLowerCase();
   if (u.includes("manualslib.com/search")) return 3;
   if (u.includes("manualslib.com")) return 2;
   if (u.includes("google.com") || u.includes("search.brave.com")) return 3;
-  return 1; // Manufacturer domain or direct PDF
+  return 1;
 }
 
 const SOURCE_LABELS: Record<1 | 2 | 3, { label: string; color: string }> = {
-  1: { label: "OEM",    color: "text-[#69cc69]" },   // green — direct from manufacturer
-  2: { label: "MLIB",   color: "text-[#4fc3f7]" },   // blue — ManualsLib product page
-  3: { label: "SEARCH", color: "text-outline/50" },  // gray — search results page
+  1: { label: "OEM PDF",      color: "text-[#69cc69]" },
+  2: { label: "ManualsLib",   color: "text-[#4fc3f7]" },
+  3: { label: "Search",       color: "text-outline/50" },
 };
 
 function formatSearchDate(iso: string): string {
@@ -37,13 +30,17 @@ function formatSearchDate(iso: string): string {
 }
 
 export default function ManualCard({ manual, onDelete }: ManualCardProps) {
-  const handlePillClick = (url: string, type: string) => {
-    if (url) {
-      window.open(url, "_blank", "noopener,noreferrer");
-    } else {
-      alert(`No ${type} manual URL available for ${manual.model_number}`);
+  // Use the first (and typically only) URL — the installation manual
+  const doc = manual.manual_urls[0];
+
+  const handleOpen = () => {
+    if (doc?.url) {
+      window.open(doc.url, "_blank", "noopener,noreferrer");
     }
   };
+
+  const src = doc ? (doc.source ?? inferSource(doc.url)) : 3;
+  const srcInfo = SOURCE_LABELS[src];
 
   return (
     <div className="bg-surface-container-low ghost-border rounded-lg p-4 group">
@@ -69,35 +66,26 @@ export default function ManualCard({ manual, onDelete }: ManualCardProps) {
         </button>
       </div>
 
-      {/* Search date */}
-      <p className="text-[10px] text-outline/60 font-headline uppercase tracking-wide mb-3">
-        Searched {formatSearchDate(manual.search_date)}
-      </p>
-
-      {/* Document type pills */}
-      <div className="flex flex-wrap gap-2">
-        {manual.manual_urls.map((doc) => {
-          const typeKey = doc.type.toUpperCase();
-          const colorClass = pillColors[typeKey] || "text-outline";
-          const src = doc.source ?? inferSource(doc.url);
-          const srcInfo = SOURCE_LABELS[src];
-
-          return (
-            <button
-              key={doc.type}
-              onClick={() => handlePillClick(doc.url, doc.type)}
-              className={`flex flex-col items-center px-2.5 py-1.5 rounded bg-surface-container-high font-headline font-bold transition-all hover:brightness-125 active:scale-95 ${colorClass}`}
-            >
-              <span className="text-[10px] uppercase tracking-wide leading-none">
-                {typeKey}
-              </span>
-              <span className={`text-[8px] uppercase tracking-wider leading-none mt-0.5 ${srcInfo.color}`}>
-                {srcInfo.label}
-              </span>
-            </button>
-          );
-        })}
+      {/* Source badge + date */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`font-headline font-bold text-[9px] uppercase tracking-wider ${srcInfo.color}`}>
+          {srcInfo.label}
+        </span>
+        <span className="text-outline/30 text-[9px]">·</span>
+        <span className="text-[10px] text-outline/60 font-headline uppercase tracking-wide">
+          {formatSearchDate(manual.search_date)}
+        </span>
       </div>
+
+      {/* Single open button */}
+      <button
+        onClick={handleOpen}
+        disabled={!doc?.url}
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-surface-container-high font-headline font-bold text-xs uppercase tracking-wide text-on-surface transition-all hover:brightness-125 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <BookOpen className="w-4 h-4" />
+        Open Manual
+      </button>
     </div>
   );
 }

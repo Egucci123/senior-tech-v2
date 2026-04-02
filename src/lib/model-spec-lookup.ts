@@ -244,59 +244,30 @@ export async function fetchBraveSpecs(
       ? `WEB-VERIFIED SPECS — ${brand} ${model}:\n${specLines}\n\nCRITICAL: Use these web results as your PRIMARY source for this specific model. Your training data may have wrong specs for this exact unit. If inducer voltage, board type, capacitor setup, or any electrical spec is mentioned in these results — use that, not your default assumption. If a spec is NOT in these results and NOT visible in the photo — say "I need to verify that for this exact model" rather than guessing.`
       : "";
 
-    // ── Build manual URLs ─────────────────────────────────────────
-    const seen = new Set<string>();
+    // ── Build single INSTALL manual URL ──────────────────────────
     const manualUrls: BraveLookupResult["manualUrls"] = [];
 
-    // SOURCE 1 — ManualsLib product/manual pages (searched with base model)
-    const manualsLibPage =
-      manualsLibResults.find((r) => r.url.includes("/products/")) ||
-      manualsLibResults.find((r) => r.url.includes("/manual/")) ||
-      manualsLibResults[0];
-
-    if (manualsLibPage) {
-      for (const type of ["INSTALL", "SERVICE", "WIRING", "PARTS"]) {
-        seen.add(type);
-        manualUrls.push({ type, url: manualsLibPage.url, title: manualsLibPage.title, source: 1 });
-      }
-    } else {
-      // Brave found nothing on ManualsLib — go straight to Source 3 search URLs
-      // so all 4 buttons are populated before we even check for OEM PDFs
-      for (const type of ["INSTALL", "SERVICE", "WIRING", "PARTS"]) {
-        seen.add(type);
-        manualUrls.push({
-          type,
-          url: manualsLibSearch(brand, baseModel, type),
-          title: `Search ManualsLib: ${brand} ${baseModel}`,
-          source: 3,
-        });
-      }
-    }
-
-    // SOURCE 2 — Manufacturer direct PDFs (supplement ManualsLib, don't replace)
-    // If we find a specific type PDF from OEM, upgrade that button to the direct PDF
+    // SOURCE 1 — Direct OEM PDF if Brave found one classified as INSTALL
     const directPdfs = mfrResults.filter((r) => isDirectPdf(r.url));
-    for (const r of directPdfs) {
-      const type = classifyManualUrl(r.title, r.url);
-      if (type) {
-        // Replace the ManualsLib link for this type with the direct OEM PDF
-        const idx = manualUrls.findIndex((m) => m.type === type);
-        if (idx >= 0) {
-          manualUrls[idx] = { type, url: r.url, title: r.title, source: 2 };
-        } else {
-          manualUrls.push({ type, url: r.url, title: r.title, source: 2 });
-          seen.add(type);
-        }
-      }
-    }
+    const installPdf = directPdfs.find((r) => classifyManualUrl(r.title, r.url) === "INSTALL")
+      ?? directPdfs[0];
 
-    // SOURCE 3 — ManualsLib search URL for any type still missing
-    // Uses base model so searches actually return results
-    for (const type of ["INSTALL", "SERVICE", "WIRING", "PARTS"]) {
-      if (!seen.has(type)) {
+    if (installPdf) {
+      manualUrls.push({ type: "INSTALL", url: installPdf.url, title: installPdf.title, source: 2 });
+    } else {
+      // SOURCE 2 — ManualsLib product page
+      const manualsLibPage =
+        manualsLibResults.find((r) => r.url.includes("/products/")) ||
+        manualsLibResults.find((r) => r.url.includes("/manual/")) ||
+        manualsLibResults[0];
+
+      if (manualsLibPage) {
+        manualUrls.push({ type: "INSTALL", url: manualsLibPage.url, title: manualsLibPage.title, source: 1 });
+      } else {
+        // SOURCE 3 — ManualsLib search URL (guaranteed live link)
         manualUrls.push({
-          type,
-          url: manualsLibSearch(brand, baseModel, type),
+          type: "INSTALL",
+          url: manualsLibSearch(brand, baseModel, "INSTALL"),
           title: `Search ManualsLib: ${brand} ${baseModel}`,
           source: 3,
         });

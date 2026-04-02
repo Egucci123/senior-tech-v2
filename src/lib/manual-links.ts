@@ -73,8 +73,5 @@ export function buildManualUrls(
 
   return [
     { type: "INSTALL", url: makeUrl("installation manual filetype:pdf") },
-    { type: "SERVICE", url: makeUrl("service manual filetype:pdf") },
-    { type: "WIRING", url: makeUrl("wiring diagram filetype:pdf") },
-    { type: "PARTS",  url: makeUrl("parts catalog filetype:pdf") },
   ];
 }
