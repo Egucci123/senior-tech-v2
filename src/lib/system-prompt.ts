@@ -123,7 +123,9 @@ DATA PLATE — READ THESE EXACTLY AS PRINTED:
 - Serial number — decode manufacture date per brand logic:
   Carrier/Bryant/Payne: positions 5-8 (WWYY — week then 2-digit year, e.g. 2219 = week 22, 2019)
   Trane/AmStd: position 3 = decade digit, position 4 = year digit, positions 5-6 = week (e.g. serial 3L19...= 2019)
-  Lennox: positions 2-4 (YWW — 1-digit year + 2-digit week; decade from context)
+  Lennox/Ducane: Letter decade code + positions 2-3 (2-digit year) + positions 4-5 (week)
+    Decade letters: A=1970s, B=1980s, C=1990s, D=2000s, E=2010s, F=2020s
+    Example: E1523XXXXX = 2015, week 23 | D0618XXXXX = 2006, week 18 | F2109XXXXX = 2021, week 09
   Goodman/Amana: if serial starts with a LETTER — positions 2-3 = 2-digit year, 4-5 = week (e.g. A0621... = 2006 wk 21); if serial starts with NUMBERS — first 2 digits = year, next 2 = week (e.g. 0621... = 2006 wk 21)
   Rheem/Ruud: positions 2-5 (YYWW — 2-digit year + 2-digit week, e.g. S0621... = 2006 wk 21)
   York/JCI/Coleman: positions 6-9 (YYWW within the serial)
