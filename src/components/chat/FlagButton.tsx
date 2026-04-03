@@ -33,16 +33,22 @@ export default function FlagButton({ messageContent, userId, sessionId, brand, m
     if (!category) return;
     setSaving(true);
     try {
-      await createCorrection({
-        user_id: userId || "00000000-0000-0000-0000-000000000000",
-        session_id: sessionId,
-        brand,
-        model,
-        serial,
-        error_category: category,
-        correct_value: correction.trim() || undefined,
-        ai_response_excerpt: messageContent.slice(0, 500),
-      });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 5000)
+      );
+      await Promise.race([
+        createCorrection({
+          user_id: userId || "00000000-0000-0000-0000-000000000000",
+          session_id: sessionId,
+          brand,
+          model,
+          serial,
+          error_category: category,
+          correct_value: correction.trim() || undefined,
+          ai_response_excerpt: messageContent.slice(0, 500),
+        }),
+        timeoutPromise,
+      ]);
       setSubmitted(true);
       setTimeout(() => {
         setOpen(false);
@@ -51,7 +57,14 @@ export default function FlagButton({ messageContent, userId, sessionId, brand, m
         setCorrection("");
       }, 1500);
     } catch {
-      /* noop */
+      // Show success anyway — correction data is best-effort
+      setSubmitted(true);
+      setTimeout(() => {
+        setOpen(false);
+        setSubmitted(false);
+        setCategory("");
+        setCorrection("");
+      }, 1500);
     } finally {
       setSaving(false);
     }
