@@ -105,6 +105,7 @@ function createInitialSessionState(): SessionState {
 export interface UseChatReturn {
   messages: ChatMessage[];
   sessionState: SessionState;
+  currentSessionId: string | null;
   isLoading: boolean;
   safetyGateOpen: boolean;
   pendingSafetyContent: string | null;
@@ -472,6 +473,7 @@ export function useChat(user: User | null): UseChatReturn {
   return {
     messages,
     sessionState,
+    currentSessionId: currentSessionIdRef.current,
     isLoading,
     safetyGateOpen,
     pendingSafetyContent,

@@ -283,3 +283,23 @@ export async function logSafetyAcknowledgment(
     .select()
     .single();
 }
+
+// ────────────────────────────────────────────
+// Corrections (table: corrections)
+// ────────────────────────────────────────────
+
+export async function createCorrection(data: {
+  user_id: string;
+  session_id?: string;
+  brand?: string;
+  model?: string;
+  serial?: string;
+  error_category: string;
+  correct_value?: string;
+  ai_response_excerpt?: string;
+}) {
+  return supabase.from("corrections").insert({
+    ...data,
+    created_at: new Date().toISOString(),
+  });
+}

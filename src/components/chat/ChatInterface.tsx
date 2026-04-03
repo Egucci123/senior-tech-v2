@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Wrench, Camera, ArrowUp, RotateCcw, ClipboardList, Loader2, X, Copy, Check } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import ChatMessage from "./ChatMessage";
+import FlagButton from "./FlagButton";
 import SafetyGate from "./SafetyGate";
 import VoiceInput from "./VoiceInput";
 import QuickReferenceDrawer from "../calculators/QuickReferenceDrawer";
@@ -105,6 +106,8 @@ function SummaryModal({ notes, onClose }: SummaryModalProps) {
 export default function ChatInterface({ user }: ChatInterfaceProps) {
   const {
     messages,
+    sessionState,
+    currentSessionId,
     isLoading,
     safetyGateOpen,
     sendMessage,
@@ -282,6 +285,17 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
             return (
               <div key={msg.id}>
                 <ChatMessage message={msg} />
+
+                {msg.role === "assistant" && (
+                  <FlagButton
+                    messageContent={msg.content}
+                    userId={user?.id}
+                    sessionId={currentSessionId ?? undefined}
+                    brand={sessionState?.equipment?.brand}
+                    model={sessionState?.equipment?.model}
+                    serial={sessionState?.equipment?.serial_number}
+                  />
+                )}
 
                 {chips.length > 0 && (
                   <div className="flex flex-wrap gap-2 ml-3 mb-4">
