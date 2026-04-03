@@ -13,8 +13,9 @@ export function buildManualUrls(
 ): { type: string; url: string; source: 3 }[] {
   const mlBrand = normalizeBrandForManualsLib(brand);
   const baseModel = getBaseModel(model);
-  // ManualsLib prefers + for spaces; longer query avoids "too short or inconsistent" error
-  const q = `${mlBrand}+${baseModel}+hvac+installation+and+operation+manual`;
+  // Brand + model is the sweet spot for ManualsLib search — longer phrases trigger
+  // their "too short or inconsistent query" filter on short model numbers
+  const q = `${mlBrand}+${baseModel}`;
   return [
     {
       type: "INSTALL",

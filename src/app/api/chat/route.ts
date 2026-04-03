@@ -147,8 +147,8 @@ export async function POST(request: NextRequest) {
         apiKey
       );
       if (extracted?.brand && extracted?.model) {
-        // v4 suffix: busts cached results that had multi-URL format; v4 = single INSTALL URL + ManualsLib brand normalization
-        const cacheKey = `${extracted.brand}__${extracted.model}__v4`.toLowerCase().replace(/\s+/g, "_");
+        // v5 suffix: busts cached results that included OEM PDFs; v5 = ManualsLib-only, no cache on source-3 fallback
+        const cacheKey = `${extracted.brand}__${extracted.model}__v5`.toLowerCase().replace(/\s+/g, "_");
 
         // 7-day TTL: ignore stale cache entries
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -173,14 +173,18 @@ export async function POST(request: NextRequest) {
           if (result) {
             webSpecsContext = result.specsContext;
             webManualUrls = result.manualUrls;
-            // Cache result for all future techs searching this model
-            supabaseAdmin.from("manual_searches").insert({
-              user_id: userId || "00000000-0000-0000-0000-000000000000",
-              model_number: cacheKey,
-              brand: "__system_cache__",
-              search_date: new Date().toISOString(),
-              manual_urls: { specsContext: result.specsContext, manualUrls: result.manualUrls },
-            }).then(() => {}, () => {});
+            // Only cache when we found an actual ManualsLib product page (source 1)
+            // Don't cache source-3 search fallbacks — they add a card but open a dead search
+            const hasRealManual = result.manualUrls.some((m) => (m as { source?: number }).source === 1);
+            if (hasRealManual) {
+              supabaseAdmin.from("manual_searches").insert({
+                user_id: userId || "00000000-0000-0000-0000-000000000000",
+                model_number: cacheKey,
+                brand: "__system_cache__",
+                search_date: new Date().toISOString(),
+                manual_urls: { specsContext: result.specsContext, manualUrls: result.manualUrls },
+              }).then(() => {}, () => {});
+            }
           }
         }
       }

@@ -12,13 +12,13 @@ interface ManualCardProps {
 function inferSource(url: string): 1 | 2 | 3 {
   const u = url.toLowerCase();
   if (u.includes("manualslib.com/search")) return 3;
-  if (u.includes("manualslib.com")) return 2;
+  if (u.includes("manualslib.com")) return 1;
   if (u.includes("google.com") || u.includes("search.brave.com")) return 3;
-  return 1;
+  return 3;
 }
 
 const SOURCE_LABELS: Record<1 | 2 | 3, { label: string; color: string }> = {
-  1: { label: "OEM PDF",      color: "text-[#69cc69]" },
+  1: { label: "ManualsLib",   color: "text-[#4fc3f7]" },
   2: { label: "ManualsLib",   color: "text-[#4fc3f7]" },
   3: { label: "Search",       color: "text-outline/70" },
 };

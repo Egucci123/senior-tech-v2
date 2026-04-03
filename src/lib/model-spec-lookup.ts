@@ -153,16 +153,13 @@ async function braveSearch(query: string, key: string, count = 6): Promise<Brave
 }
 
 /** ManualsLib search URL using BASE model — always a live link */
-function manualsLibSearch(brand: string, baseModel: string, type: string): string {
-  const suffixMap: Record<string, string> = {
-    INSTALL: "installation and operation manual",
-    SERVICE: "service and maintenance manual",
-    WIRING: "wiring diagram schematic",
-    PARTS: "parts list catalog",
-  };
+function manualsLibSearch(brand: string, baseModel: string, _type: string): string {
   const mlBrand = normalizeBrandForManualsLib(brand);
-  // ManualsLib prefers + for spaces; %20 can trigger "too short or inconsistent query"
-  const q = `${mlBrand}+${baseModel}+hvac+${(suffixMap[type] ?? "manual").replace(/\s+/g, "+")}`;
+  // Model number alone reliably finds the right page on ManualsLib.
+  // Adding long phrases like "installation and operation manual" triggers their
+  // "too short or inconsistent query" filter when the model is short.
+  // Brand + model is the sweet spot — matches their search index.
+  const q = `${mlBrand}+${baseModel}`;
   return `https://www.manualslib.com/search/?q=${q}`;
 }
 
@@ -203,34 +200,26 @@ export async function fetchBraveSpecs(
       ? `WEB-VERIFIED SPECS — ${brand} ${model}:\n${specLines}\n\nCRITICAL: Use these web results as your PRIMARY source for this specific model. Your training data may have wrong specs for this exact unit. If inducer voltage, board type, capacitor setup, or any electrical spec is mentioned in these results — use that, not your default assumption. If a spec is NOT in these results and NOT visible in the photo — say "I need to verify that for this exact model" rather than guessing.`
       : "";
 
-    // ── Build single INSTALL manual URL ──────────────────────────
+    // ── Build single INSTALL manual URL — ManualsLib only ────────
+    // OEM PDFs removed: manufacturer portals return parts lists, not install manuals
     const manualUrls: BraveLookupResult["manualUrls"] = [];
 
-    // SOURCE 1 — Direct OEM PDF if Brave found one classified as INSTALL
-    const directPdfs = mfrResults.filter((r) => isDirectPdf(r.url));
-    const installPdf = directPdfs.find((r) => classifyManualUrl(r.title, r.url) === "INSTALL")
-      ?? directPdfs[0];
+    // SOURCE 1 — ManualsLib product page (Brave found a direct page for this model)
+    const manualsLibPage =
+      manualsLibResults.find((r) => r.url.includes("/products/")) ||
+      manualsLibResults.find((r) => r.url.includes("/manual/")) ||
+      manualsLibResults[0];
 
-    if (installPdf) {
-      manualUrls.push({ type: "INSTALL", url: installPdf.url, title: installPdf.title, source: 2 });
+    if (manualsLibPage) {
+      manualUrls.push({ type: "INSTALL", url: manualsLibPage.url, title: manualsLibPage.title, source: 1 });
     } else {
-      // SOURCE 2 — ManualsLib product page
-      const manualsLibPage =
-        manualsLibResults.find((r) => r.url.includes("/products/")) ||
-        manualsLibResults.find((r) => r.url.includes("/manual/")) ||
-        manualsLibResults[0];
-
-      if (manualsLibPage) {
-        manualUrls.push({ type: "INSTALL", url: manualsLibPage.url, title: manualsLibPage.title, source: 1 });
-      } else {
-        // SOURCE 3 — ManualsLib search URL (guaranteed live link)
-        manualUrls.push({
-          type: "INSTALL",
-          url: manualsLibSearch(brand, baseModel, "INSTALL"),
-          title: `Search ManualsLib: ${brand} ${baseModel}`,
-          source: 3,
-        });
-      }
+      // SOURCE 3 — ManualsLib search URL (guaranteed live link, always works)
+      manualUrls.push({
+        type: "INSTALL",
+        url: manualsLibSearch(brand, baseModel, "INSTALL"),
+        title: `Search ManualsLib: ${mlBrand} ${baseModel}`,
+        source: 3,
+      });
     }
 
     return { specsContext, manualUrls };
