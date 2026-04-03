@@ -46,7 +46,23 @@ export async function extractModelFromImage(
               },
               {
                 type: "text",
-                text: 'Return ONLY a JSON object — no markdown, no explanation. Keys: brand, model, serial. Example: {"brand":"York","model":"ZE060","serial":"N1F8123456"}. Extract from the HVAC data plate. Empty string for any field not visible.',
+                text: `Return ONLY a JSON object — no markdown, no explanation. Keys: brand, model, serial.
+
+Extract every character of the model number exactly as printed — do not truncate or paraphrase.
+
+If brand is NOT printed on the plate, infer it from the model number prefix:
+GSX/GSXC/GSXN/DSXC/AVXC/GMV/GMP/GPH/GPC → Goodman
+SSX/ASX/AWX/AVPTC/ARUF → Amana
+2AC/4AC/EL/XC/XP/ML → Ducane or Lennox (use Ducane if serial starts with letter+digits pattern)
+ZE/ZF/ZJ/ZH/YHE/YCE → York
+24ACC/24ANA/24SNB/FB4C/FV4C → Carrier
+T4A/4TTB/4TTR/4TXB/TEM → Trane
+RA/RASL/UAMB/RH1T → Rheem
+CA4/CA5/N4A/N4H → Heil or Tempstar
+WCA/WPH → Westinghouse or Nordyne
+If model prefix not recognized, leave brand as empty string.
+
+Example: {"brand":"Goodman","model":"GSX160361","serial":"1910123456"}`,
               },
             ],
           },
