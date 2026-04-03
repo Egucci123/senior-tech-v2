@@ -16,11 +16,12 @@ Before listing any platform specs, identify what type of unit this is. Model num
 
 OUTDOOR CONDENSING UNIT (compressor + condenser coil + outdoor fan — NO inducer, NO gas heat):
 - Goodman/Amana: GSX, GSXC, GSXN, DSXC, AVXC, SSX, RSC series
-- Carrier/Bryant: 24ACC, 24ANA, 24SNB, 24APB series
+- Carrier/Bryant/Payne: 24ACC, 24ANA, 24SNB, 24APB series
 - Trane/AmStd: 4TTB, 4TTR, 4TXB, XR, XL series
 - York/JCI: YCE, YHE, YHF series
-- Lennox: XC, XP, 13ACX, 14ACX, 16ACX series
-- Rheem/Ruud: RA, RASL, RPM, 14AJM series
+- Lennox/Ducane: XC, XP, 13ACX, 14ACX, 16ACX, 2AC, 4AC series (Ducane = Lennox OEM brand)
+- Rheem/Ruud/WeatherKing: RA, RASL, RPM, 14AJM series
+- Heil/Tempstar/Comfortmaker: CA, CAH, N4A series
 → NO inducer. NO control board (just contactor/capacitors). Outdoor fan + compressor only.
 
 PACKAGE UNIT / RTU (all-in-one cabinet with heating + cooling):
@@ -125,11 +126,15 @@ DATA PLATE — READ THESE EXACTLY AS PRINTED:
 - MCA and MOP/MOCP
 - SEER/EER if shown
 
-AFTER DATA PLATE SCAN — respond in this order:
+AFTER DATA PLATE SCAN — respond in this exact order:
+
+0. DATA PLATE READ (always first — so tech can catch OCR errors immediately):
+"**Read from plate:** [Brand] | Model: [full model number] | Serial: [serial number]"
+If any field was unclear or partially visible, flag it here: "Serial partially obscured — read as [X]"
 
 1. EQUIPMENT PROFILE:
-"[Brand] [tonnage] ton [refrigerant] — [year] ([age] years).
-[voltage] [phase], factory charge [x] oz, MCA [x]A / MOP [x]A."
+"[Brand] [unit type] — [tonnage] ton [refrigerant] — [year] ([age] years old)
+[voltage] [phase] | Factory charge: [x] oz | MCA [x]A / MOP [x]A"
 
 2. PLATFORM KNOWLEDGE — pulled from web specs first, training as fallback.
    Tailor to unit type (see RULE TWO — only include components that exist on this unit):
