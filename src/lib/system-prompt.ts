@@ -120,19 +120,65 @@ DATA PLATE — READ THESE EXACTLY AS PRINTED:
   CA4/CA5/N4A/N4H → Heil or Tempstar
   State clearly: "Brand not on plate — identified as [Brand] from model prefix [prefix]"
 - Model number — full alphanumeric exactly as shown
-- Serial number — decode manufacture date per brand logic:
-  Carrier/Bryant/Payne: positions 5-8 (WWYY — week then 2-digit year, e.g. 2219 = week 22, 2019)
-  Trane/AmStd: position 3 = decade digit, position 4 = year digit, positions 5-6 = week (e.g. serial 3L19...= 2019)
-  Lennox/Ducane — alphanumeric format (4 digits + letter + 5 digits):
-    Positions 3-4 = 2-digit year | Position 5 = month letter (A=Jan, B=Feb, C=Mar, D=Apr, E=May, F=Jun, G=Jul, H=Aug, J=Sep, K=Oct, L=Nov, M=Dec — skips I)
-    Example: 1912B19347 → year=12=2012, month=B=Feb → February 2012
-    Example: 8409H12345 → year=09=2009, month=H=Aug → August 2009
-    Older all-numeric format (10 digits): positions 7-8 = year, 9-10 = week
-  Goodman/Amana: if serial starts with a LETTER — positions 2-3 = 2-digit year, 4-5 = week (e.g. A0621... = 2006 wk 21); if serial starts with NUMBERS — first 2 digits = year, next 2 = week (e.g. 0621... = 2006 wk 21)
-  Rheem/Ruud: positions 2-5 (YYWW — 2-digit year + 2-digit week, e.g. S0621... = 2006 wk 21)
-  York/JCI/Coleman: positions 6-9 (YYWW within the serial)
-  Daikin: positions 5-8 (year + week)
-  If uncertain on year: say "approx [year]"
+- Serial number — decode manufacture date per brand logic (all formats web-verified):
+
+  CARRIER / BRYANT / PAYNE: pos 1-2=week, pos 3-4=year (WWYY)
+    Example: 4519A12345 = week 45, 2019 → November 2019
+
+  TRANE / AMERICAN STANDARD:
+    2010-present: pos 1-2=year, pos 3-4=week (YYWW). Example: 1934...=2019 wk 34
+    2002-2009: pos 1=single year digit, pos 2-3=week. Example: 752...=2007 wk 52
+    1983-2001: pos 1=year letter, pos 2-3=week
+      Year letters: O/A=1980,T=81,U=82,W=83,X=84,Y=85,S=86,B=87,C=88,D=89,E=90,F=91,G=92,H=93,J=94,K=95,L=96,M=97,N=98,P=99,R=2000,Z=2001
+
+  LENNOX / DUCANE: pos 1-2=plant code, pos 3-4=year, pos 5=month letter (skips I)
+    A=Jan,B=Feb,C=Mar,D=Apr,E=May,F=Jun,G=Jul,H=Aug,J=Sep,K=Oct,L=Nov,M=Dec
+    Example: 1912B19347 = plant 19, year 2012, month B = February 2012
+    Example: 8409H12345 = plant 84, year 2009, month H = August 2009
+
+  GOODMAN / AMANA: pos 1-2=year, pos 3-4=month (YYMM)
+    Example: 2108XXXXXX = 2021, month 08 = August 2021
+
+  RHEEM / RUUD / WEATHERKING: pos 1=plant letter, pos 2-3=month, pos 4-5=year (MMYY after plant letter)
+    If pos 2-3 exceed 12, treat as week not month
+    Example: F0920A12345 = plant F, month 09, year 20 = September 2020
+
+  YORK / JOHNSON CONTROLS / COLEMAN / LUXAIRE (Oct 2004-present):
+    Pos 1=plant letter | Pos 2=first year digit | Pos 3=month letter | Pos 4=second year digit
+    Combine pos 2+4 for 2-digit year. Month: A=Jan,B=Feb,C=Mar,D=Apr,E=May,F=Jun,G=Jul,H=Aug,K=Sep,L=Oct,M=Nov,N=Dec
+    Example: W1M7XXXXXX = plant W, year 1+7=17=2017, month M = November 2017
+    York pre-2004: pos 2=month letter, pos 3=year letter (21-year cycle — use refrigerant type to determine era)
+
+  DAIKIN: pos 5-6=year, pos 7-8=month (####YYMM format)
+    Example: SCOX1209XXXX = year 12=2012, month 09 = September 2012
+
+  ICP / HEIL / TEMPSTAR / COMFORTMAKER / ARCOAIRE: pos 1=plant letter, pos 2-3=year, pos 4-5=week
+    Example: E0311XXXXX = plant E, year 2003, week 11 → mid-March 2003
+
+  NORDYNE / GIBSON / FRIGIDAIRE / WESTINGHOUSE / INTERTHERM / MILLER: pos 4-5=year, pos 6-7=month
+    Example: GT3050153269 = year 05=2005, month 01=January 2005
+
+  MITSUBISHI ELECTRIC: pos 1=last digit of year (decade from context), pos 2=month (1-9=Jan-Sep,X=Oct,Y=Nov,Z=Dec)
+    Example: 6Y12345 = year ending 6 (2006 or 2016), month Y=November
+
+  BOSCH HVAC: serial starts "FD" — FD digits 1-2 + 20 = year, FD digits 3-4 = month
+    Example: FD9612XXXXX = 96+20=2016, month 12=December 2016
+
+  BRADFORD WHITE (water heaters): pos 1=year letter (20-yr cycle), pos 2=month letter (A-M skipping I)
+    Year cycle: A=2004/2024,B=2005,C=2006,D=2007,E=2008,F=2009,G=2010,H=2011,J=2012,K=2013,L=2014,M=2015,N=2016,P=2017,S=2018,T=2019,W=2020,X=2021,Y=2022,Z=2023
+
+  A.O. SMITH (water heaters): pos 1-2=year, pos 3-4=week (YYWW). Example: 1604XXXXXX = 2016 wk 04
+
+  RINNAI (water heaters, post-2009): pos 1=year letter, pos 2=month letter
+    Sequence (skips I,O,Q): A=Jan/2009,B=Feb/2010,C=Mar/2011,D=Apr/2012,E=May/2013,F=Jun/2014,G=Jul/2015,H=Aug/2016,J=Sep/2017,K=Oct/2018,L=Nov/2019,M=Dec/2020,N=2021,P=2022,R=2023,S=2024
+  Rinnai pre-2009: pos 1-2=year, pos 3-4=month (YYMM)
+
+  NAVIEN: characters 7-8=year, character 9=month (1-9=Jan-Sep,X=Oct,Y=Nov,Z=Dec)
+  WEIL-McLAIN: no field decode — tell tech to use weil-mclain.com/cp-lookup with the CP number
+  FUJITSU HVAC: no public decode — tell tech to call (866) 952-8324
+
+  When decade is uncertain: cross-check refrigerant type (R-22=pre-2010, R-410A=post-2005) and unit condition.
+  Say "approx [year]" — never guess wrong decade confidently
 - Tonnage/BTU — READ from BTUH or COOLING CAPACITY field directly. Never infer from model number. 60,000 BTU = 5 tons.
 - Voltage and phase
 - Refrigerant type and factory charge (oz)
