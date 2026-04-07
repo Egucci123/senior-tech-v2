@@ -5,7 +5,66 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("[Supabase] Missing env vars: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY");
 }
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+/**
+ * Cookie-backed storage adapter for Supabase auth.
+ * Stores sessions in BOTH localStorage and a cookie so sessions survive
+ * iOS Safari ITP (which clears localStorage for infrequently-visited sites).
+ */
+function createSessionStorage() {
+  if (typeof window === "undefined") return undefined; // SSR: no-op
+
+  const COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days
+
+  function getCookie(key: string): string | null {
+    const match = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(encodeURIComponent(key) + "="));
+    if (!match) return null;
+    try {
+      return decodeURIComponent(match.split("=").slice(1).join("="));
+    } catch {
+      return null;
+    }
+  }
+
+  function setCookie(key: string, value: string) {
+    try {
+      document.cookie = `${encodeURIComponent(key)}=${encodeURIComponent(value)}; max-age=${COOKIE_MAX_AGE}; path=/; SameSite=Lax`;
+    } catch { /* cookie too large or blocked — localStorage still works */ }
+  }
+
+  function removeCookie(key: string) {
+    document.cookie = `${encodeURIComponent(key)}=; max-age=0; path=/`;
+  }
+
+  return {
+    getItem: (key: string): string | null => {
+      try {
+        const ls = localStorage.getItem(key);
+        if (ls !== null) return ls;
+      } catch { /* noop */ }
+      return getCookie(key);
+    },
+    setItem: (key: string, value: string): void => {
+      try { localStorage.setItem(key, value); } catch { /* noop */ }
+      setCookie(key, value);
+    },
+    removeItem: (key: string): void => {
+      try { localStorage.removeItem(key); } catch { /* noop */ }
+      removeCookie(key);
+    },
+  };
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+    storage: createSessionStorage(),
+  },
+});
 
 // ────────────────────────────────────────────
 // Auth helpers

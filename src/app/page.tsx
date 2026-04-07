@@ -13,7 +13,7 @@ import { useManuals } from "@/hooks/useManuals";
 
 export default function MainApp() {
   const router = useRouter();
-  const { session, user, loading, signOut } = useAuth();
+  const { session, user, loading, signOut, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("diagnose");
   const { manuals, hasNew, clearNew } = useManuals();
 
@@ -21,7 +21,13 @@ export default function MainApp() {
     if (!loading && !session) {
       router.replace("/onboarding");
     }
-  }, [loading, session, router]);
+    // Session exists but user profile missing — retry once then sign out
+    if (!loading && session && !user) {
+      refreshUser().catch(() => {
+        signOut().then(() => router.replace("/onboarding"));
+      });
+    }
+  }, [loading, session, user, router, refreshUser, signOut]);
 
   useEffect(() => {
     if (activeTab === "manuals" && hasNew) {

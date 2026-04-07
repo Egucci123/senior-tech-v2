@@ -7,7 +7,7 @@ import CreateAccountScreen from "@/components/onboarding/CreateAccountScreen";
 import CredentialsScreen from "@/components/onboarding/CredentialsScreen";
 import { mapYearsToLevel } from "@/components/onboarding/CredentialsScreen";
 import TermsScreen from "@/components/onboarding/TermsScreen";
-import { signUp, signIn, createUserProfile, createAcknowledgments } from "@/lib/supabase";
+import { supabase, signUp, signIn, createUserProfile, createAcknowledgments } from "@/lib/supabase";
 import type { ExperienceLevel } from "@/types";
 
 const STORAGE_KEY = "seniortech_onboarding";
@@ -111,6 +111,13 @@ export default function OnboardingPage() {
   const [signInPassword, setSignInPassword] = useState("");
   const [signInError, setSignInError] = useState<string | null>(null);
   const [signingIn, setSigningIn] = useState(false);
+
+  // If already signed in, go straight to the app
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace("/");
+    });
+  }, [router]);
 
   // Load saved state on mount
   useEffect(() => {
