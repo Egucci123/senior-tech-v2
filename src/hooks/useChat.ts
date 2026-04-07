@@ -363,24 +363,25 @@ export function useChat(user: User | null): UseChatReturn {
             },
           }));
 
-          /* Auto-populate manuals via shared store — normalize to base model */
-          const baseExtractedModel = getBaseModel(extractedModel);
-          const manualUrls = buildManualUrls(extractedBrand, baseExtractedModel);
+          /* Auto-populate manuals — only if Brave didn't already add one */
+          if (!braveManualMatch) {
+            const baseExtractedModel = getBaseModel(extractedModel);
+            const manualUrls = buildManualUrls(extractedBrand, baseExtractedModel);
 
-          addManual({
-            id: crypto.randomUUID(),
-            user_id: user?.id || "",
-            model_number: baseExtractedModel,
-            brand: extractedBrand,
-            search_date: new Date().toISOString(),
-            manual_urls: manualUrls,
-          });
+            addManual({
+              id: crypto.randomUUID(),
+              user_id: user?.id || "",
+              model_number: baseExtractedModel,
+              brand: extractedBrand,
+              search_date: new Date().toISOString(),
+              manual_urls: manualUrls,
+            });
 
-          /* Persist manual search to DB (fire-and-forget) */
-          if (user?.id) {
-            createManualSearch(user.id, baseExtractedModel, extractedBrand, manualUrls)
-              .then(() => {})
-              .catch((e) => console.error("Failed to persist manual search:", e));
+            if (user?.id) {
+              createManualSearch(user.id, baseExtractedModel, extractedBrand, manualUrls)
+                .then(() => {})
+                .catch((e) => console.error("Failed to persist manual search:", e));
+            }
           }
         }
 
