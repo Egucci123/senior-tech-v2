@@ -65,35 +65,26 @@ export default function ManualCard({ manual, onDelete }: ManualCardProps) {
         </button>
       </div>
 
-      {manual.no_manual_reason ? (
-        /* Pre-2005 — no digital manual available */
-        <p className="text-[11px] text-outline leading-relaxed mt-2">
-          {manual.no_manual_reason}
-        </p>
-      ) : (
-        <>
-          {/* Source badge + date */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className={`font-headline font-bold text-[9px] uppercase tracking-wider ${srcInfo.color}`}>
-              {srcInfo.label}
-            </span>
-            <span className="text-outline/30 text-[9px]">·</span>
-            <span className="text-[10px] text-outline/80 font-headline uppercase tracking-wide">
-              {formatSearchDate(manual.search_date)}
-            </span>
-          </div>
+      {/* Source badge + date */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`font-headline font-bold text-[9px] uppercase tracking-wider ${srcInfo.color}`}>
+          {srcInfo.label}
+        </span>
+        <span className="text-outline/30 text-[9px]">·</span>
+        <span className="text-[10px] text-outline/80 font-headline uppercase tracking-wide">
+          {formatSearchDate(manual.search_date)}
+        </span>
+      </div>
 
-          {/* Single open button */}
-          <button
-            onClick={handleOpen}
-            disabled={!doc?.url}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-surface-container-high font-headline font-bold text-xs uppercase tracking-wide text-on-surface transition-all hover:brightness-125 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <BookOpen className="w-4 h-4" />
-            Open Manual
-          </button>
-        </>
-      )}
+      {/* Single open button */}
+      <button
+        onClick={handleOpen}
+        disabled={!doc?.url}
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-surface-container-high font-headline font-bold text-xs uppercase tracking-wide text-on-surface transition-all hover:brightness-125 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <BookOpen className="w-4 h-4" />
+        Open Manual
+      </button>
     </div>
   );
 }

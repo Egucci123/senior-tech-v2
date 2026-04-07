@@ -289,26 +289,16 @@ export function useChat(user: User | null): UseChatReturn {
           }
         }
 
-        /* Extract no-manual reason for pre-2005 equipment */
+        /* Extract no-manual reason for pre-2005 equipment — strip tag, append note to chat */
         const noManualMatch = assistantContent.match(/<!-- NO_MANUAL_REASON:(.+?) -->/);
         if (noManualMatch) {
-          assistantContent = assistantContent.replace(/<!-- NO_MANUAL_REASON:.+? -->/, "").trimStart();
+          const note = `\n\n_${noManualMatch[1]}_`;
+          assistantContent = assistantContent
+            .replace(/<!-- NO_MANUAL_REASON:.+? -->/, "")
+            .trimStart() + note;
           setMessages((prev) =>
             prev.map((m) => m.id === assistantMsg.id ? { ...m, content: assistantContent } : m)
           );
-          const brandFromState = sessionState?.equipment?.brand || "";
-          const modelFromState = sessionState?.equipment?.model || "";
-          if (brandFromState || modelFromState) {
-            addManual({
-              id: crypto.randomUUID(),
-              user_id: user?.id || "",
-              model_number: getBaseModel(modelFromState),
-              brand: brandFromState,
-              search_date: new Date().toISOString(),
-              manual_urls: [],
-              no_manual_reason: noManualMatch[1],
-            });
-          }
         }
 
         /* Extract Brave manual URLs and strip tag from displayed content */
@@ -385,8 +375,8 @@ export function useChat(user: User | null): UseChatReturn {
             },
           }));
 
-          /* Auto-populate manuals — only if Brave didn't already add one */
-          if (!braveManualMatch) {
+          /* Auto-populate manuals — only if Brave didn't add one and it's not pre-2005 */
+          if (!braveManualMatch && !noManualMatch) {
             const baseExtractedModel = getBaseModel(extractedModel);
             const manualUrls = buildManualUrls(extractedBrand, baseExtractedModel);
 
