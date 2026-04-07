@@ -152,12 +152,10 @@ async function braveSearch(query: string, key: string, count = 6): Promise<Brave
   }
 }
 
-/** ManualsLib search URL using BASE model — always a live link */
-function manualsLibSearch(brand: string, baseModel: string, _type: string): string {
+/** ManualsLib search URL — brand + exact model */
+function manualsLibSearch(brand: string, model: string): string {
   const mlBrand = normalizeBrandForManualsLib(brand);
-  // brand+model+manual avoids ManualsLib "too short or inconsistent query" error
-  // when base model is short (e.g. ZE060, RA1636). "manual" is always safe here.
-  const q = `${mlBrand}+${baseModel}+manual`;
+  const q = encodeURIComponent(`${mlBrand} ${model}`);
   return `https://www.manualslib.com/search/?q=${q}`;
 }
 
@@ -214,8 +212,8 @@ export async function fetchBraveSpecs(
       // SOURCE 3 — ManualsLib search URL (guaranteed live link, always works)
       manualUrls.push({
         type: "INSTALL",
-        url: manualsLibSearch(brand, baseModel, "INSTALL"),
-        title: `Search ManualsLib: ${mlBrand} ${baseModel}`,
+        url: manualsLibSearch(brand, model),
+        title: `Search ManualsLib: ${mlBrand} ${model}`,
         source: 3,
       });
     }
