@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import type { ChatMessage as ChatMessageType } from "@/types";
 
 interface ChatMessageProps {
@@ -35,12 +34,11 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         {/* Image attachment */}
         {message.image_url && (
           <div className="mb-2 rounded overflow-hidden">
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={message.image_url}
               alt="Attached photo"
-              width={320}
-              height={240}
-              className="w-full h-auto object-cover rounded"
+              className="w-full h-auto object-cover rounded max-h-64"
             />
           </div>
         )}
