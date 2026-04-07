@@ -232,7 +232,10 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
           DIAGNOSTIC SESSION
         </span>
         <button
-          onClick={newDiagnostic}
+          onClick={() => {
+            newDiagnostic();
+            if (fileInputRef.current) fileInputRef.current.value = "";
+          }}
           className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg
                      bg-surface-container-high border border-outline-variant/20
                      font-headline font-bold text-[10px] uppercase tracking-wider text-primary
