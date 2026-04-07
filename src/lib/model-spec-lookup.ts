@@ -155,11 +155,9 @@ async function braveSearch(query: string, key: string, count = 6): Promise<Brave
 /** ManualsLib search URL using BASE model — always a live link */
 function manualsLibSearch(brand: string, baseModel: string, _type: string): string {
   const mlBrand = normalizeBrandForManualsLib(brand);
-  // Model number alone reliably finds the right page on ManualsLib.
-  // Adding long phrases like "installation and operation manual" triggers their
-  // "too short or inconsistent query" filter when the model is short.
-  // Brand + model is the sweet spot — matches their search index.
-  const q = `${mlBrand}+${baseModel}`;
+  // brand+model+manual avoids ManualsLib "too short or inconsistent query" error
+  // when base model is short (e.g. ZE060, RA1636). "manual" is always safe here.
+  const q = `${mlBrand}+${baseModel}+manual`;
   return `https://www.manualslib.com/search/?q=${q}`;
 }
 
