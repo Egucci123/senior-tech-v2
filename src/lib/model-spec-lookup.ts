@@ -200,11 +200,17 @@ export async function fetchBraveSpecs(
     // OEM PDFs removed: manufacturer portals return parts lists, not install manuals
     const manualUrls: BraveLookupResult["manualUrls"] = [];
 
-    // SOURCE 1 — ManualsLib product page (Brave found a direct page for this model)
+    // SOURCE 1 — ManualsLib product page, only if result actually matches this unit
+    const modelUpper = baseModel.toUpperCase();
+    const brandUpper = mlBrand.toUpperCase();
+    function resultMatches(r: BraveResult): boolean {
+      const text = (r.title + " " + r.url).toUpperCase();
+      return text.includes(modelUpper) || text.includes(brandUpper);
+    }
     const manualsLibPage =
-      manualsLibResults.find((r) => r.url.includes("/products/")) ||
-      manualsLibResults.find((r) => r.url.includes("/manual/")) ||
-      manualsLibResults[0];
+      manualsLibResults.find((r) => r.url.includes("/products/") && resultMatches(r)) ||
+      manualsLibResults.find((r) => r.url.includes("/manual/") && resultMatches(r)) ||
+      manualsLibResults.find((r) => resultMatches(r));
 
     if (manualsLibPage) {
       manualUrls.push({ type: "INSTALL", url: manualsLibPage.url, title: manualsLibPage.title, source: 1 });
