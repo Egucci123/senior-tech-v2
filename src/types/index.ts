@@ -104,6 +104,8 @@ export interface ManualSearch {
     /** 1 = manufacturer OEM portal, 2 = ManualsLib, 3 = ManualsLib search */
     source?: 1 | 2 | 3;
   }[];
+  /** Set for pre-2005 equipment where manuals are not available online */
+  no_manual_reason?: string;
 }
 
 // ── API Usage ──

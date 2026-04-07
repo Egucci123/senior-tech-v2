@@ -9,7 +9,7 @@
  * SPEC CONTEXT: Manufacturer domain + spec results fed to Sonnet as ground truth.
  */
 
-import { getBaseModel } from "./model-utils";
+import { getBaseModel, estimateYearFromSerial } from "./model-utils";
 import { getBrandDocDomain, normalizeBrandForManualsLib } from "./brand-domains";
 import { AI_MODELS, ANTHROPIC_API_URL, ANTHROPIC_VERSION } from "./ai-config";
 
@@ -108,6 +108,7 @@ export interface BraveResult {
 export interface BraveLookupResult {
   specsContext: string;
   manualUrls: { type: string; url: string; title: string; source: 1 | 2 | 3 }[];
+  noManualReason?: string;
 }
 
 function isDirectPdf(url: string): boolean {
@@ -161,10 +162,23 @@ function manualsLibSearch(brand: string, model: string): string {
 
 export async function fetchBraveSpecs(
   brand: string,
-  model: string
+  model: string,
+  serial?: string
 ): Promise<BraveLookupResult | null> {
   const key = process.env.BRAVE_SEARCH_API_KEY;
   if (!key || !brand || !model) return null;
+
+  // Pre-2005 equipment — manuals rarely digitized, skip lookup entirely
+  if (serial) {
+    const mfgYear = estimateYearFromSerial(brand, serial);
+    if (mfgYear !== null && mfgYear < 2005) {
+      return {
+        specsContext: "",
+        manualUrls: [],
+        noManualReason: `This unit was manufactured in ${mfgYear}. Digital manuals for equipment from this era are rarely available online — documentation was not widely digitized before 2005. Check with your wholesaler or the manufacturer's technical support line for service literature.`,
+      };
+    }
+  }
 
   const mfrDomain = getBrandDocDomain(brand);
   // Use base model for all searches — full config strings like ZE060H12A2A1ABA1A2

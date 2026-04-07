@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
   /* ── Web spec + manual lookup for photo requests ── */
   let webSpecsContext: string | null = null;
   let webManualUrls: { type: string; url: string; title: string }[] = [];
+  let noManualReason: string | null = null;
 
   if (hasPhoto && braveKey) {
     const lastImgMsg = [...messages].reverse().find(
@@ -169,10 +170,11 @@ export async function POST(request: NextRequest) {
           webManualUrls = parsed.manualUrls;
         } else {
           console.log(`[WEB LOOKUP] Fetching: ${extracted.brand} ${extracted.model}`);
-          const result = await fetchBraveSpecs(extracted.brand, extracted.model);
+          const result = await fetchBraveSpecs(extracted.brand, extracted.model, extracted.serial);
           if (result) {
             webSpecsContext = result.specsContext;
             webManualUrls = result.manualUrls;
+            if (result.noManualReason) noManualReason = result.noManualReason;
             // Only cache when we found an actual ManualsLib product page (source 1)
             // Don't cache source-3 search fallbacks — they add a card but open a dead search
             const hasRealManual = result.manualUrls.some((m) => (m as { source?: number }).source === 1);
@@ -243,6 +245,12 @@ export async function POST(request: NextRequest) {
       if (webManualUrls.length > 0) {
         controller.enqueue(
           encoder.encode(`<!-- BRAVE_MANUALS:${JSON.stringify(webManualUrls)} -->\n`)
+        );
+      }
+      // Inject no-manual reason for pre-2005 equipment
+      if (noManualReason) {
+        controller.enqueue(
+          encoder.encode(`<!-- NO_MANUAL_REASON:${noManualReason} -->\n`)
         );
       }
 
