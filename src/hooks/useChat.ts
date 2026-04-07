@@ -322,17 +322,17 @@ export function useChat(user: User | null): UseChatReturn {
             /* Push real Brave-found manuals to Manuals tab */
             const manualUrls = braveManuals.map((m) => ({ type: m.type, url: m.url }));
             const brandFromState = sessionState?.equipment?.brand || "";
-            const baseModelFromState = getBaseModel(sessionState?.equipment?.model || "");
+            const modelFromState = sessionState?.equipment?.model || "";
             addManual({
               id: crypto.randomUUID(),
               user_id: user?.id || "",
-              model_number: baseModelFromState,
+              model_number: modelFromState,
               brand: brandFromState,
               search_date: new Date().toISOString(),
               manual_urls: manualUrls,
             });
             if (user?.id) {
-              createManualSearch(user.id, baseModelFromState, brandFromState, manualUrls)
+              createManualSearch(user.id, modelFromState, brandFromState, manualUrls)
                 .then(() => {})
                 .catch((e) => console.error("Failed to persist brave manuals:", e));
             }
@@ -377,20 +377,19 @@ export function useChat(user: User | null): UseChatReturn {
 
           /* Auto-populate manuals — only if Brave didn't add one and it's not pre-2005 */
           if (!braveManualMatch && !noManualMatch) {
-            const baseExtractedModel = getBaseModel(extractedModel);
-            const manualUrls = buildManualUrls(extractedBrand, baseExtractedModel);
+            const manualUrls = buildManualUrls(extractedBrand, getBaseModel(extractedModel));
 
             addManual({
               id: crypto.randomUUID(),
               user_id: user?.id || "",
-              model_number: baseExtractedModel,
+              model_number: extractedModel,
               brand: extractedBrand,
               search_date: new Date().toISOString(),
               manual_urls: manualUrls,
             });
 
             if (user?.id) {
-              createManualSearch(user.id, baseExtractedModel, extractedBrand, manualUrls)
+              createManualSearch(user.id, extractedModel, extractedBrand, manualUrls)
                 .then(() => {})
                 .catch((e) => console.error("Failed to persist manual search:", e));
             }

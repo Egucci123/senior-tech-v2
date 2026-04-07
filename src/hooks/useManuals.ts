@@ -50,21 +50,16 @@ export function clearManuals() {
 
 /** Called from useChat when a model number is extracted from AI response */
 export function addManual(manual: ManualSearch, userId?: string) {
-  // Normalize to base model before storing — prevents ZE060H12A2A1ABA1A2 vs ZE060 duplicates
-  const normalizedManual = {
-    ...manual,
-    model_number: getBaseModel(manual.model_number),
-  };
-  // Avoid duplicates — full config strings and base models are the same unit
-  const exists = _manuals.some((m) => isSameModel(m.model_number, normalizedManual.model_number));
+  // Dedup by base model — full config strings and base models are the same unit
+  const exists = _manuals.some((m) => isSameModel(m.model_number, manual.model_number));
   if (!exists) {
-    _manuals = [normalizedManual, ..._manuals];
+    _manuals = [manual, ..._manuals];
     _hasNew = true;
     notify();
 
     // Persist to DB (fire-and-forget) if userId available
     if (userId) {
-      createManualSearch(userId, normalizedManual.model_number, normalizedManual.brand, normalizedManual.manual_urls)
+      createManualSearch(userId, manual.model_number, manual.brand, manual.manual_urls)
         .then(() => {})
         .catch((e) => console.error("Failed to persist manual search:", e));
     }

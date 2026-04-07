@@ -80,9 +80,9 @@ export function estimateYearFromSerial(brand: string, serial: string): number | 
     return twoDigitYear(s.slice(4, 6));
   }
 
-  // Heil/Tempstar/ICP/Comfortmaker: digits at pos 4-5
-  if (/heil|tempstar|icp|comfortmaker|arcoaire/i.test(b) && /\d/.test(s[4])) {
-    return twoDigitYear(s.slice(4, 6));
+  // Heil/Tempstar/ICP/Comfortmaker: year at pos 0-1 (e.g. 0404... = 2004)
+  if (/heil|tempstar|icp|comfortmaker|arcoaire|international comfort/i.test(b) && /\d/.test(s[0])) {
+    return twoDigitYear(s.slice(0, 2));
   }
 
   // Goodman/Amana/Daikin: digits at pos 0-1
@@ -104,10 +104,6 @@ export function estimateYearFromSerial(brand: string, serial: string): number | 
   if (/trane|american standard/i.test(b) && /\d/.test(s[2])) {
     return twoDigitYear(s.slice(2, 4));
   }
-
-  // Generic fallback: scan for first 2-digit sequence that looks like a year
-  const match = s.match(/(\d{2})/);
-  if (match) return twoDigitYear(match[1]);
 
   return null;
 }
