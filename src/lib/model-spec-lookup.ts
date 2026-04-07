@@ -219,7 +219,9 @@ export async function fetchBraveSpecs(
     const brandUpper = mlBrand.toUpperCase();
     function resultMatches(r: BraveResult): boolean {
       const text = (r.title + " " + r.url).toUpperCase();
-      return text.includes(modelUpper) || text.includes(brandUpper);
+      // Model match only — brand-only fallback is too loose and picks wrong products
+      // (e.g. any Goodman result matched when looking for a Goodman GID91 furnace)
+      return text.includes(modelUpper);
     }
     const manualsLibPage =
       manualsLibResults.find((r) => r.url.includes("/products/") && resultMatches(r)) ||
