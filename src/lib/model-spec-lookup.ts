@@ -181,18 +181,21 @@ export async function fetchBraveSpecs(
   }
 
   const mfrDomain = getBrandDocDomain(brand);
-  // Use base model for all searches — full config strings like ZE060H12A2A1ABA1A2
-  // return zero results on ManualsLib and manufacturer portals
   const baseModel = getBaseModel(model);
 
+  // "Search model" — strip trailing revision/variant suffixes like -1A, -2B, _AA
+  // so the Brave query uses e.g. GID91AU075D12B instead of the truncated GID91AU07
+  const searchModel = model
+    .replace(/[-_]\d{1,2}[A-Z]{1,2}$/i, "")  // strip trailing revision code (-1A, -2B, -AB)
+    .replace(/[\s\-_]/g, "")                   // remove separators
+    .toUpperCase();
+
   try {
-    // Three parallel searches using base model:
-    // A — ManualsLib: most reliable, indexed by base model
-    // B — Manufacturer domain PDFs: direct OEM files
-    // C — Spec data: feeds AI context only
     const mlBrand = normalizeBrandForManualsLib(brand);
+    // Use full searchModel for ManualsLib query — baseModel is often too truncated
+    // (e.g. GID91AU075D12B is indexed as-is; GID91AU07 returns wrong products)
     const [manualsLibResults, mfrResults, specResults] = await Promise.all([
-      braveSearch(`site:manualslib.com ${mlBrand} ${baseModel}`, key, 6),
+      braveSearch(`site:manualslib.com ${mlBrand} ${searchModel}`, key, 6),
       mfrDomain
         ? braveSearch(`site:${mfrDomain} ${baseModel} filetype:pdf`, key, 8)
         : braveSearch(`${brand} ${baseModel} filetype:pdf service installation`, key, 6),
@@ -210,19 +213,19 @@ export async function fetchBraveSpecs(
       ? `WEB-VERIFIED SPECS — ${brand} ${model}:\n${specLines}\n\nCRITICAL: Use these web results as your PRIMARY source for this specific model. Your training data may have wrong specs for this exact unit. If inducer voltage, board type, capacitor setup, or any electrical spec is mentioned in these results — use that, not your default assumption. If a spec is NOT in these results and NOT visible in the photo — say "I need to verify that for this exact model" rather than guessing.`
       : "";
 
-    // ── Build single INSTALL manual URL — ManualsLib only ────────
-    // OEM PDFs removed: manufacturer portals return parts lists, not install manuals
+    // ── Build single INSTALL manual URL — ManualsLib direct match only ────────
+    // If no exact match for this model, return noManualReason — never show a
+    // wrong product's manual or a search URL that returns unrelated results.
     const manualUrls: BraveLookupResult["manualUrls"] = [];
 
-    // SOURCE 1 — ManualsLib product page, only if result actually matches this unit
-    const modelUpper = baseModel.toUpperCase();
-    const brandUpper = mlBrand.toUpperCase();
+    // Result is valid only if the model number appears in the title or URL
+    const searchModelUpper = searchModel.toUpperCase();
+    const baseModelUpper = baseModel.toUpperCase();
     function resultMatches(r: BraveResult): boolean {
       const text = (r.title + " " + r.url).toUpperCase();
-      // Model match only — brand-only fallback is too loose and picks wrong products
-      // (e.g. any Goodman result matched when looking for a Goodman GID91 furnace)
-      return text.includes(modelUpper);
+      return text.includes(searchModelUpper) || text.includes(baseModelUpper);
     }
+
     const manualsLibPage =
       manualsLibResults.find((r) => r.url.includes("/products/") && resultMatches(r)) ||
       manualsLibResults.find((r) => r.url.includes("/manual/") && resultMatches(r)) ||
@@ -231,13 +234,12 @@ export async function fetchBraveSpecs(
     if (manualsLibPage) {
       manualUrls.push({ type: "INSTALL", url: manualsLibPage.url, title: manualsLibPage.title, source: 1 });
     } else {
-      // SOURCE 3 — ManualsLib search URL (guaranteed live link, always works)
-      manualUrls.push({
-        type: "INSTALL",
-        url: manualsLibSearch(brand, model),
-        title: `Search ManualsLib: ${mlBrand} ${model}`,
-        source: 3,
-      });
+      // No verified match — tell the tech rather than show a wrong manual
+      return {
+        specsContext,
+        manualUrls: [],
+        noManualReason: `No installation manual was found on ManualsLib for ${brand} ${model}. Try searching manualslib.com directly or contact the manufacturer's technical support for service literature.`,
+      };
     }
 
     return { specsContext, manualUrls };
