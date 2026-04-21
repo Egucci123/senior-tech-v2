@@ -240,6 +240,17 @@ export function useChat(user: User | null): UseChatReturn {
         });
 
         if (!res.ok) {
+          if (res.status === 429) {
+            const errData = await res.json().catch(() => ({}));
+            const errorMsg: ChatMessage = {
+              id: crypto.randomUUID(),
+              role: "assistant",
+              content: errData.message || "You've reached today's message limit — resets at midnight.",
+              timestamp: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, errorMsg]);
+            return;
+          }
           throw new Error(`Chat API error: ${res.status}`);
         }
 

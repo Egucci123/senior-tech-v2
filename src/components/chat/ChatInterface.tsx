@@ -189,6 +189,8 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
     if (summaryLoading || messages.length === 0) return;
 
     setSummaryLoading(true);
+    const abort = new AbortController();
+    const timeout = setTimeout(() => abort.abort(), 15000);
     try {
       const conversation = messages.map((m) => ({
         role: m.role,
@@ -199,13 +201,15 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ conversation }),
+        signal: abort.signal,
       });
 
       const data = res.ok ? await res.json() : { result: "" };
       setSummaryModal(data.result || "");
     } catch {
-      /* noop */
+      /* noop — timeout or network error */
     } finally {
+      clearTimeout(timeout);
       setSummaryLoading(false);
     }
   }, [messages, summaryLoading]);

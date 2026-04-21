@@ -36,6 +36,7 @@ interface TermsScreenProps {
   onSelectAll: () => void;
   onContinue: () => void;
   onBack: () => void;
+  error?: string | null;
 }
 
 export default function TermsScreen({
@@ -44,6 +45,7 @@ export default function TermsScreen({
   onSelectAll,
   onContinue,
   onBack,
+  error,
 }: TermsScreenProps) {
   const [showModal, setShowModal] = useState(false);
 
@@ -54,12 +56,27 @@ export default function TermsScreen({
       {/* Back */}
       <button
         onClick={onBack}
-        className="flex items-center gap-2 mb-6 text-sm self-start transition-opacity hover:opacity-80"
+        className="flex items-center gap-2 mb-4 text-sm self-start transition-opacity hover:opacity-80 min-h-[44px]"
         style={{ color: "var(--outline)" }}
       >
         <ArrowLeft className="w-4 h-4" />
         Back
       </button>
+
+      {/* Inline error message — shown below back button, never covers it */}
+      {error && (
+        <div
+          className="w-full max-w-sm mb-4 p-3 rounded-lg text-sm"
+          style={{
+            backgroundColor: "rgba(239, 68, 68, 0.1)",
+            color: "#ef4444",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          {error}
+        </div>
+      )}
 
       {/* Header row */}
       <div className="flex items-center justify-between mb-6 max-w-sm w-full">

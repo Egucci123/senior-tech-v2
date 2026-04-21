@@ -410,23 +410,6 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {/* Error display for signup flow */}
-      {error && state.currentScreen === 3 && (
-        <div className="fixed top-2 left-4 right-4 z-50">
-          <div
-            className="p-3 rounded-lg text-sm"
-            style={{
-              backgroundColor: "rgba(239, 68, 68, 0.1)",
-              color: "#ef4444",
-              border: "1px solid rgba(239, 68, 68, 0.3)",
-              fontFamily: "Inter, sans-serif",
-            }}
-          >
-            {error}
-          </div>
-        </div>
-      )}
-
       {/* Screen Content */}
       {state.currentScreen === 0 && (
         <ValueScreen
@@ -458,6 +441,7 @@ export default function OnboardingPage() {
       {state.currentScreen === 3 && (
         <TermsScreen
           checkedItems={state.termsChecked}
+          error={error}
           onToggle={(index) => {
             setState((prev) => {
               const newChecked = [...prev.termsChecked];

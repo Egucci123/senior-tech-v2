@@ -231,9 +231,10 @@ export async function POST(request: NextRequest) {
   if (!anthropicRes.ok) {
     const errorText = await anthropicRes.text();
     console.error("Anthropic API error:", anthropicRes.status, errorText);
+    const clientStatus = anthropicRes.status === 529 ? 503 : anthropicRes.status;
     return new Response(
-      JSON.stringify({ error: "Anthropic API error", details: errorText }),
-      { status: anthropicRes.status, headers: { "Content-Type": "application/json", ...securityHeaders } }
+      JSON.stringify({ error: "Service temporarily unavailable. Please try again." }),
+      { status: clientStatus, headers: { "Content-Type": "application/json", ...securityHeaders } }
     );
   }
 
