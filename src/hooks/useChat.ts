@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import type { ChatMessage, SessionState, User } from "@/types";
+import type { ChatMessage, SessionState, User, DiagnosticSession } from "@/types";
 import { addManual } from "./useManuals";
 import { buildManualUrls } from "@/lib/manual-links";
 import { getBaseModel } from "@/lib/model-utils";
@@ -109,9 +109,11 @@ export interface UseChatReturn {
   isLoading: boolean;
   safetyGateOpen: boolean;
   pendingSafetyContent: string | null;
+  pendingPhotoMessageId: string | null;
   sendMessage: (content: string, imageUrl?: string) => Promise<void>;
   confirmSafety: () => void;
   newDiagnostic: () => void;
+  loadSession: (session: DiagnosticSession) => void;
 }
 
 export function useChat(user: User | null): UseChatReturn {
@@ -121,9 +123,8 @@ export function useChat(user: User | null): UseChatReturn {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [safetyGateOpen, setSafetyGateOpen] = useState(false);
-  const [pendingSafetyContent, setPendingSafetyContent] = useState<
-    string | null
-  >(null);
+  const [pendingSafetyContent, setPendingSafetyContent] = useState<string | null>(null);
+  const [pendingPhotoMessageId, setPendingPhotoMessageId] = useState<string | null>(null);
 
   const turnCountRef = useRef(0);
   const currentSessionIdRef = useRef<string | null>(null);
@@ -268,6 +269,11 @@ export function useChat(user: User | null): UseChatReturn {
 
         setMessages((prev) => [...prev, assistantMsg]);
 
+        /* Mark this as a pending photo turn so UI can show a clean spinner */
+        if (hasPhoto) {
+          setPendingPhotoMessageId(assistantMsg.id);
+        }
+
         if (reader) {
           try {
             let done = false;
@@ -278,10 +284,16 @@ export function useChat(user: User | null): UseChatReturn {
                 const chunk = decoder.decode(value, { stream: true });
                 assistantContent += chunk;
 
+                /* Strip HTML comment tags (BRAVE_MANUALS, NO_MANUAL_REASON, EQUIPMENT)
+                   from the displayed content during streaming so the user never sees raw tags */
+                const displayContent = assistantContent
+                  .replace(/<!--[\s\S]*?-->/g, "")
+                  .trimStart();
+
                 setMessages((prev) =>
                   prev.map((m) =>
                     m.id === assistantMsg.id
-                      ? { ...m, content: assistantContent }
+                      ? { ...m, content: displayContent }
                       : m
                   )
                 );
@@ -407,6 +419,9 @@ export function useChat(user: User | null): UseChatReturn {
           }
         }
 
+        /* Clear photo pending state — streaming + tag extraction complete */
+        setPendingPhotoMessageId(null);
+
         /* Safety trigger logging only — no UI gate */
         const triggerPhrase = containsSafetyTrigger(assistantContent);
         if (triggerPhrase && user?.id && currentSessionIdRef.current) {
@@ -467,6 +482,36 @@ export function useChat(user: User | null): UseChatReturn {
     setPendingSafetyContent(null);
   }, []);
 
+  const loadSession = useCallback((session: DiagnosticSession) => {
+    /* Abort any in-flight request */
+    abortControllerRef.current?.abort();
+
+    /* End the current session before switching (fire-and-forget) */
+    if (currentSessionIdRef.current) {
+      endDiagnosticSession(currentSessionIdRef.current, "unresolved")
+        .catch((e) => console.error("[useChat] Failed to end session on load:", e));
+    }
+
+    /* Restore conversation from the loaded session */
+    const restoredMessages: ChatMessage[] = (session.full_conversation || []).map((m) => ({
+      id: m.id || crypto.randomUUID(),
+      role: m.role,
+      content: m.content,
+      image_url: m.image_url,
+      timestamp: m.timestamp,
+      metadata: m.metadata,
+    }));
+
+    setMessages(restoredMessages);
+    setSessionState(session.session_state || createInitialSessionState());
+    currentSessionIdRef.current = session.id;
+    turnCountRef.current = restoredMessages.filter((m) => m.role === "user").length;
+    setIsLoading(false);
+    setSafetyGateOpen(false);
+    setPendingSafetyContent(null);
+    setPendingPhotoMessageId(null);
+  }, []); // stable — only touches refs and state setters
+
   const newDiagnostic = useCallback(() => {
     /* End current session in DB before resetting (fire-and-forget) */
     if (currentSessionIdRef.current) {
@@ -500,8 +545,10 @@ export function useChat(user: User | null): UseChatReturn {
     isLoading,
     safetyGateOpen,
     pendingSafetyContent,
+    pendingPhotoMessageId,
     sendMessage,
     confirmSafety,
     newDiagnostic,
+    loadSession,
   };
 }

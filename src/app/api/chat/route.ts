@@ -36,8 +36,6 @@ function selectModel(
   turnCount: number
 ): string {
   if (hasPhoto) return AI_MODELS.SONNET;
-  if (turnCount <= 3) return AI_MODELS.HAIKU;
-  if (requestType === "complex") return AI_MODELS.SONNET;
   return AI_MODELS.HAIKU;
 }
 

@@ -1,21 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/ui/Header";
 import BottomNav, { type TabId } from "@/components/ui/BottomNav";
-import ChatInterface from "@/components/chat/ChatInterface";
+import ChatInterface, { type ChatInterfaceHandle } from "@/components/chat/ChatInterface";
 import HistoryScreen from "@/components/history/HistoryScreen";
 import ManualsScreen from "@/components/manuals/ManualsScreen";
 import ProfileScreen from "@/components/profile/ProfileScreen";
 import { useManuals } from "@/hooks/useManuals";
+import type { DiagnosticSession } from "@/types";
 
 export default function MainApp() {
   const router = useRouter();
   const { session, user, loading, signOut, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("diagnose");
   const { manuals, hasNew, clearNew } = useManuals();
+  const chatRef = useRef<ChatInterfaceHandle>(null);
+
+  const handleResumeSession = useCallback((session: DiagnosticSession) => {
+    chatRef.current?.loadSession(session);
+    setActiveTab("diagnose");
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -81,7 +88,7 @@ export default function MainApp() {
           className="fixed inset-0 bottom-16 z-10"
           style={isDiagnose ? undefined : { visibility: "hidden", pointerEvents: "none" }}
         >
-          <ChatInterface user={user} />
+          <ChatInterface ref={chatRef} user={user} />
         </div>
 
         {/* Other tabs — mount/unmount normally, no freeze risk */}
@@ -89,7 +96,7 @@ export default function MainApp() {
           <ManualsScreen sharedManuals={manuals} userId={user?.id} />
         )}
         {activeTab === "history" && (
-          <HistoryScreen userId={user?.id} />
+          <HistoryScreen userId={user?.id} onResumeSession={handleResumeSession} />
         )}
         {activeTab === "settings" && (
           <ProfileScreen user={user} session={session} signOut={signOut} />

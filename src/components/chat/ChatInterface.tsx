@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Wrench, Camera, ArrowUp, RotateCcw, ClipboardList, Loader2, X, Copy, Check } from "lucide-react";
+import { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
+import { Wrench, Camera, ArrowUp, RotateCcw, ClipboardList, Loader2, X, Copy, Check, ScanLine } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import ChatMessage from "./ChatMessage";
 import FlagButton from "./FlagButton";
@@ -9,7 +9,12 @@ import SafetyGate from "./SafetyGate";
 import VoiceInput from "./VoiceInput";
 import QuickReferenceDrawer from "../calculators/QuickReferenceDrawer";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import type { User } from "@/types";
+import type { User, DiagnosticSession } from "@/types";
+
+/* ── Public handle exposed to parent via ref ── */
+export interface ChatInterfaceHandle {
+  loadSession: (session: DiagnosticSession) => void;
+}
 
 /* ── Response chips that can appear after AI messages ── */
 interface ResponseChip {
@@ -103,17 +108,22 @@ function SummaryModal({ notes, onClose }: SummaryModalProps) {
   );
 }
 
-export default function ChatInterface({ user }: ChatInterfaceProps) {
+const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(
+function ChatInterface({ user }, ref) {
   const {
     messages,
     sessionState,
     currentSessionId,
     isLoading,
     safetyGateOpen,
+    pendingPhotoMessageId,
     sendMessage,
     confirmSafety,
     newDiagnostic,
+    loadSession,
   } = useChat(user ?? null);
+
+  useImperativeHandle(ref, () => ({ loadSession }), [loadSession]);
 
   const [input, setInput] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -289,9 +299,31 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
             const chips =
               msg.role === "assistant" ? parseResponseChips(msg.content) : [];
 
+            /* While a photo response is streaming, show a clean "Analyzing..." card
+               instead of the raw streaming content (tags, partial text, etc.) */
+            const isPhotoAnalyzing =
+              msg.role === "assistant" &&
+              msg.id === pendingPhotoMessageId &&
+              isLoading;
+
             return (
               <div key={msg.id}>
-                <ChatMessage message={msg} />
+                {isPhotoAnalyzing ? (
+                  <div className="flex justify-start mb-4">
+                    <div>
+                      <div className="border-l-[3px] border-primary-container bg-surface-container-low rounded-lg px-4 py-3">
+                        <div className="flex items-center gap-2 text-primary-container">
+                          <ScanLine className="w-4 h-4 animate-pulse" />
+                          <span className="font-headline font-bold text-xs uppercase tracking-wider">
+                            Reading data plate...
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <ChatMessage message={msg} />
+                )}
 
                 {msg.role === "assistant" && (
                   <FlagButton
@@ -325,8 +357,8 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
             );
           })}
 
-        {/* Typing indicator */}
-        {isLoading && (
+        {/* Typing indicator — hidden during photo analysis (handled by the message placeholder) */}
+        {isLoading && !pendingPhotoMessageId && (
           <div className="flex justify-start mb-4">
             <div className="border-l-[3px] border-primary-container bg-surface-container-low rounded-lg px-4 py-3">
               <div className="flex items-center gap-1.5">
@@ -417,4 +449,8 @@ export default function ChatInterface({ user }: ChatInterfaceProps) {
     </div>
     </ErrorBoundary>
   );
-}
+});
+
+ChatInterface.displayName = "ChatInterface";
+
+export default ChatInterface;
