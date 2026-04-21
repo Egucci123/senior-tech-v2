@@ -25,7 +25,7 @@ async function blobUrlToBase64(blobUrl: string): Promise<{ base64: string; media
       const objectUrl = URL.createObjectURL(blob);
       img.onload = () => {
         URL.revokeObjectURL(objectUrl);
-        const MAX = 1920;
+        const MAX = 1200;
         let { width, height } = img;
         if (width > MAX || height > MAX) {
           if (width > height) {
@@ -42,7 +42,7 @@ async function blobUrlToBase64(blobUrl: string): Promise<{ base64: string; media
         const ctx = canvas.getContext("2d");
         if (!ctx) { resolve(null); return; }
         ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
         const base64 = dataUrl.split(",")[1];
         resolve({ base64, mediaType: "image/jpeg" });
       };

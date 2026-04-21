@@ -41,6 +41,9 @@ function selectModel(
   return AI_MODELS.HAIKU;
 }
 
+/* ── Extend function timeout for photo analysis (requires Vercel Pro) ── */
+export const maxDuration = 60;
+
 /* ── POST handler ── */
 export async function POST(request: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -138,59 +141,72 @@ export async function POST(request: NextRequest) {
   let noManualReason: string | null = null;
 
   if (hasPhoto && braveKey) {
-    const lastImgMsg = [...messages].reverse().find(
-      (m: { role: string; image_base64?: string }) => m.role === "user" && m.image_base64
-    );
-    if (lastImgMsg?.image_base64) {
+    // Hard 5-second deadline — Hobby plan times out at 10s total;
+    // if spec lookup runs long, abort it and let Claude respond from the image alone.
+    const specLookup = async () => {
+      const lastImgMsg = [...messages].reverse().find(
+        (m: { role: string; image_base64?: string }) => m.role === "user" && m.image_base64
+      );
+      if (!lastImgMsg?.image_base64) return;
+
       const extracted = await extractModelFromImage(
         lastImgMsg.image_base64,
         lastImgMsg.image_media_type || "image/jpeg",
         apiKey
       );
-      if (extracted?.brand && extracted?.model) {
-        // v5 suffix: busts cached results that included OEM PDFs; v5 = ManualsLib-only, no cache on source-3 fallback
-        const cacheKey = `${extracted.brand}__${extracted.model}__v5`.toLowerCase().replace(/\s+/g, "_");
+      if (!extracted?.brand || !extracted?.model) return;
 
-        // 7-day TTL: ignore stale cache entries
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      // v5 suffix: busts cached results that included OEM PDFs; v5 = ManualsLib-only, no cache on source-3 fallback
+      const cacheKey = `${extracted.brand}__${extracted.model}__v5`.toLowerCase().replace(/\s+/g, "_");
 
-        // Check Supabase cache first — avoid paying for repeat searches
-        const { data: cached } = await supabaseAdmin
-          .from("manual_searches")
-          .select("manual_urls")
-          .eq("model_number", cacheKey)
-          .eq("brand", "__system_cache__")
-          .gt("search_date", sevenDaysAgo)
-          .maybeSingle();
+      // 7-day TTL: ignore stale cache entries
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-        if (cached?.manual_urls) {
-          console.log(`[WEB LOOKUP] Cache hit: ${cacheKey}`);
-          const parsed = cached.manual_urls as { specsContext: string; manualUrls: { type: string; url: string; title: string; source?: number }[] };
-          webSpecsContext = parsed.specsContext;
-          webManualUrls = parsed.manualUrls;
-        } else {
-          console.log(`[WEB LOOKUP] Fetching: ${extracted.brand} ${extracted.model}`);
-          const result = await fetchBraveSpecs(extracted.brand, extracted.model, extracted.serial);
-          if (result) {
-            webSpecsContext = result.specsContext;
-            webManualUrls = result.manualUrls;
-            if (result.noManualReason) noManualReason = result.noManualReason;
-            // Only cache when we found an actual ManualsLib product page (source 1)
-            // Don't cache source-3 search fallbacks — they add a card but open a dead search
-            const hasRealManual = result.manualUrls.some((m) => (m as { source?: number }).source === 1);
-            if (hasRealManual) {
-              supabaseAdmin.from("manual_searches").insert({
-                user_id: userId || "00000000-0000-0000-0000-000000000000",
-                model_number: cacheKey,
-                brand: "__system_cache__",
-                search_date: new Date().toISOString(),
-                manual_urls: { specsContext: result.specsContext, manualUrls: result.manualUrls },
-              }).then(() => {}, () => {});
-            }
+      // Check Supabase cache first — avoid paying for repeat searches
+      const { data: cached } = await supabaseAdmin
+        .from("manual_searches")
+        .select("manual_urls")
+        .eq("model_number", cacheKey)
+        .eq("brand", "__system_cache__")
+        .gt("search_date", sevenDaysAgo)
+        .maybeSingle();
+
+      if (cached?.manual_urls) {
+        console.log(`[WEB LOOKUP] Cache hit: ${cacheKey}`);
+        const parsed = cached.manual_urls as { specsContext: string; manualUrls: { type: string; url: string; title: string; source?: number }[] };
+        webSpecsContext = parsed.specsContext;
+        webManualUrls = parsed.manualUrls;
+      } else {
+        console.log(`[WEB LOOKUP] Fetching: ${extracted.brand} ${extracted.model}`);
+        const result = await fetchBraveSpecs(extracted.brand, extracted.model, extracted.serial);
+        if (result) {
+          webSpecsContext = result.specsContext;
+          webManualUrls = result.manualUrls;
+          if (result.noManualReason) noManualReason = result.noManualReason;
+          // Only cache when we found an actual ManualsLib product page (source 1)
+          // Don't cache source-3 search fallbacks — they add a card but open a dead search
+          const hasRealManual = result.manualUrls.some((m) => (m as { source?: number }).source === 1);
+          if (hasRealManual) {
+            supabaseAdmin.from("manual_searches").insert({
+              user_id: userId || "00000000-0000-0000-0000-000000000000",
+              model_number: cacheKey,
+              brand: "__system_cache__",
+              search_date: new Date().toISOString(),
+              manual_urls: { specsContext: result.specsContext, manualUrls: result.manualUrls },
+            }).then(() => {}, () => {});
           }
         }
       }
-    }
+    };
+
+    const timeout = new Promise<void>((resolve) =>
+      setTimeout(() => {
+        console.warn("[api/chat] Spec lookup timed out (5s) — proceeding without pre-fetched specs");
+        resolve();
+      }, 5000)
+    );
+
+    await Promise.race([specLookup(), timeout]);
   }
 
   /* ── System prompt with cache_control ── */
