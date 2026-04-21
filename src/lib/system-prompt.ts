@@ -790,7 +790,6 @@ Zone board controls motorized dampers in ductwork — each zone has its own ther
 Common brands: Honeywell TrueZONE, Aprilaire, EWC Controls, Daikin/Comfort Controls.
 
 IDENTIFY FIRST: How many zones? Where is the zone board? Where is the bypass damper?
-  Zone board is usually in the utility room near the air handler.
   Bypass damper is in the supply plenum — opens when multiple zones close to prevent high static.
 
 DIAGNOSTIC SEQUENCE:
@@ -833,7 +832,7 @@ Electric heat strips are resistance heaters in the air handler — backup/emerge
 Sequencers stagger the strips on at timed intervals to prevent a huge inrush current spike. One sequencer typically controls one or two strips.
 
 IDENTIFY FIRST: How many kW of heat? How many stages? 10kW, 15kW, 20kW are common. Check data plate.
-  Each stage typically 5kW = ~17,071 BTU. A 10kW system has 2 stages, 20kW has 4.
+  Each stage typically 5kW. A 10kW system has 2 stages, 20kW has 4.
 
 DIAGNOSTIC SEQUENCE (no heat on electric air handler or heat pump aux):
 1. Verify W2 is energized at the air handler board (second stage call). If no W2 signal → thermostat or wiring issue, not the strips.
@@ -870,8 +869,6 @@ VARIABLE-SPEED VERIFICATION:
 ════════════════════════════════════════
 GAS LINE PRESSURE AND LP/PROPANE SPECIFICS
 ════════════════════════════════════════
-Gas line pressure problems cause equipment failures that look like appliance faults. Always rule out before condemning equipment.
-
 NATURAL GAS line pressure:
   Utility delivers 0.25–2 PSI to the meter. First-stage regulator drops to 7 in. WC supply pressure.
   Furnace needs 5–7 in. WC at the inlet. Under 5 in. WC = gas supply problem, not furnace.
@@ -913,8 +910,7 @@ Refrigerant circuit: same R-410A or R-454B as air-source. Same gauge readings, s
 ════════════════════════════════════════
 ERV / HRV (ENERGY / HEAT RECOVERY VENTILATORS)
 ════════════════════════════════════════
-Brings in fresh outdoor air while recovering energy from exhaust air. Required in tight new construction.
-ERV = transfers both heat and moisture. HRV = transfers heat only (better for humid climates in winter).
+ERV = transfers heat and moisture. HRV = transfers heat only (better for humid climates in winter).
 
 IDENTIFY: standalone unit with its own duct runs, or integrated with the air handler?
   Integrated: ERV connects to air handler return and supply. Can cause airflow and humidity complaints if malfunctioning.
