@@ -393,16 +393,50 @@ Balance point: below balance point, aux heat must carry the load. Heat pump "not
 ════════════════════════════════════════
 MINI-SPLIT / DUCTLESS
 ════════════════════════════════════════
-Error code structure:
-  E-codes: communication/electrical (E1/E2 = indoor-outdoor comm failure)
-  F-codes: sensor/thermistor (F1=indoor ambient, F2=indoor coil, F3=outdoor ambient, F4=outdoor coil)
+CRITICAL: Every brand uses a completely different error code system. Never apply one brand's codes to another. Always check the service label inside the front panel first — it lists the codes for that specific unit.
+
+FUJITSU — LED flash pattern (Operation light flashes × Timer light flashes = fault code X-Y):
+  Read from remote display or count LED blinks on indoor unit.
+  Communication:
+    1-1  Indoor-outdoor comm error
+  Thermistor / sensor:
+    1-3  Return air thermistor (indoor ambient)
+    1-4  Indoor coil thermistor
+    3-3  Discharge thermistor
+    3-4  Outdoor coil thermistor
+    5-3  Outdoor ambient thermistor
+    7-6  3-way valve thermistor ← NOT coil temp
+  Protection:
+    1-2  Drain pump / float switch fault
+    2-1  Outdoor unit protection (check high/low pressure, overload)
+    3-1  IPM protection / compressor overload
+    4-1  High pressure protection
+    4-2  Low pressure protection
+  Force test mode: hold ECONOMY + FAN SPEED simultaneously on indoor unit (5 sec).
+
+MITSUBISHI — letter + number on display:
+  E0–E9: Communication / board faults
+  F0–F9: Thermistor faults (F1=indoor ambient, F2=indoor coil, F3=outdoor ambient, F4=outdoor coil)
+  P1/P2: Drain / float fault. P5: High pressure. P6: Low pressure. P8: IPM overload.
+  U-codes: Actuator / EEV errors
+  Force test mode: hold manual AUTO button on indoor unit.
+
+DAIKIN — two-character alphanumeric on display:
+  A0: Safety device fault. A3: Drain level fault. A5: High pressure. A6: Fan motor.
+  C4: Coil thermistor. C5: Gas pipe thermistor. C9: Return air thermistor.
+  E1–E9: PCB / control board errors. F3: Discharge temp high. H6: Fan motor locked.
+  Read from wired or wireless remote: press CHECK or INFO.
+
+GREE / PIONEER / TOSOT / generic no-name — E/F/H/P structure:
+  E1/E2: Indoor-outdoor comm failure
+  F1=indoor ambient, F2=indoor coil, F3=outdoor ambient, F4=outdoor coil thermistor
   H5: IPM module overload (high ambient, refrigerant issue, or high discharge temp)
   P-codes: pressure protection lockouts
+  Read: count LED flashes or hold CHECK on remote.
 
-Read codes: count LED flashes (pause between digits), or hold CHECK on remote (Mitsubishi, Gree).
-Force test mode: Mitsubishi = hold manual button on indoor unit. Fujitsu = economy + fan speed buttons simultaneously (5 sec). Always check brand service manual — modes vary significantly.
-
-Mode conflict (multi-zone): all heads must be same mode (all cool or all heat) → E7 fault if mixed.
+Mode conflict (multi-zone): all heads must be same mode (all cool or all heat).
+  Fujitsu: system won't run, outdoor unit won't start.
+  Mitsubishi/Daikin: E7 or similar comm fault displayed.
 
 Refrigerant diagnosis:
   Charge by weight — always. Inverter compressor varies speed, cannot use pressure alone.
