@@ -87,8 +87,13 @@ export function useAuth() {
 
   const refreshUser = useCallback(async () => {
     if (session?.user) {
-      const { data } = await getUserProfile(session.user.id);
-      if (data) setUser(data as User);
+      const { data, error } = await getUserProfile(session.user.id);
+      if (data) {
+        setUser(data as User);
+      } else if (error || !data) {
+        // No profile row — treat as unauthenticated so the app redirects to onboarding
+        throw new Error("no_profile");
+      }
     }
   }, [session]);
 

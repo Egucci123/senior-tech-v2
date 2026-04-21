@@ -44,7 +44,10 @@ export default function MainApp() {
 
   const isSubscribed = user?.subscription_status === "active";
 
-  if (loading || !session || !user || !isSubscribed) {
+  // Only block rendering while auth is genuinely loading.
+  // Once loaded, the useEffect above handles redirects — don't show
+  // the spinner for non-subscribed users (they'll be redirected instantly).
+  if (loading || !session || !user) {
     return (
       <div className="min-h-screen bg-[#0e0e0e] dot-grid flex flex-col items-center justify-center gap-4">
         <div className="w-16 h-16 clip-hex bg-surface-container-high flex items-center justify-center">
@@ -59,6 +62,9 @@ export default function MainApp() {
       </div>
     );
   }
+
+  // Redirect in-progress for non-subscribers — render nothing while router navigates
+  if (!isSubscribed) return null;
 
   const isDiagnose = activeTab === "diagnose";
 
