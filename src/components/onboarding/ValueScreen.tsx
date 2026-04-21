@@ -55,7 +55,7 @@ export default function ValueScreen({ onStart, onSignIn }: ValueScreenProps) {
           color: "#0e0e0e",
         }}
       >
-        START FREE — 14 DAYS
+        GET STARTED — $10/MO
       </button>
 
       {/* Sign In */}
