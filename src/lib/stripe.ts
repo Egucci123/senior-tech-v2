@@ -8,7 +8,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-04-30.basil",
+  apiVersion: "2026-03-25.dahlia",
 });
 
 export const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID ?? "";
