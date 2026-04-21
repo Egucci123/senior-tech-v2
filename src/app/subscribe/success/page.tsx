@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 type Stage = "verifying" | "activating" | "done" | "error";
 
-export default function SubscribeSuccessPage() {
+function SubscribeSuccessPageInner() {
   const router      = useRouter();
   const searchParams = useSearchParams();
   const sessionId   = searchParams.get("session_id");
@@ -107,5 +107,13 @@ export default function SubscribeSuccessPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SubscribeSuccessPage() {
+  return (
+    <Suspense>
+      <SubscribeSuccessPageInner />
+    </Suspense>
   );
 }

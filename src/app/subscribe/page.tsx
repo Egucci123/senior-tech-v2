@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Wrench, Check, Zap, BookOpen, Clock, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,7 +14,7 @@ const FEATURES = [
   { icon: Check,    text: "R-22, R-410A, R-32, R-454B coverage" },
 ];
 
-export default function SubscribePage() {
+function SubscribePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, session, loading } = useAuth();
@@ -199,5 +199,13 @@ export default function SubscribePage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SubscribePage() {
+  return (
+    <Suspense>
+      <SubscribePageInner />
+    </Suspense>
   );
 }
