@@ -67,8 +67,8 @@ export async function GET(req: NextRequest) {
       .update({
         subscription_status: "active",
         subscription_id: sub?.id ?? null,
-        subscription_current_period_end: sub?.current_period_end
-          ? new Date(sub.current_period_end * 1000).toISOString()
+        subscription_current_period_end: sub?.items?.data?.[0]?.current_period_end
+          ? new Date(sub.items.data[0].current_period_end * 1000).toISOString()
           : null,
       })
       .eq("id", userRow.id);

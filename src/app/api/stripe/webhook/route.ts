@@ -51,11 +51,16 @@ export async function POST(req: NextRequest) {
       case "invoice.payment_succeeded": {
         // Renewal — keep status active and refresh period end
         const invoice = event.data.object as Stripe.Invoice;
-        const sub = await stripe.subscriptions.retrieve(invoice.subscription as string);
-        await updateByCustomerId(invoice.customer as string, {
-          subscription_status: "active",
-          subscription_current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-        });
+        const subId = (invoice.parent as Stripe.Invoice.Parent | null)
+          ?.subscription_details?.subscription;
+        if (subId) {
+          const sub = await stripe.subscriptions.retrieve(subId as string);
+          const periodEnd = sub.items.data[0]?.current_period_end;
+          await updateByCustomerId(invoice.customer as string, {
+            subscription_status: "active",
+            subscription_current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+          });
+        }
         break;
       }
 
@@ -82,7 +87,9 @@ export async function POST(req: NextRequest) {
         await updateByCustomerId(sub.customer as string, {
           subscription_status: statusMap[sub.status] ?? "inactive",
           subscription_id: sub.id,
-          subscription_current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+          subscription_current_period_end: sub.items.data[0]?.current_period_end
+            ? new Date(sub.items.data[0].current_period_end * 1000).toISOString()
+            : null,
         });
         break;
       }
