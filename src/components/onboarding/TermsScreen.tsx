@@ -1,278 +1,352 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, Check, X } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 
-const CHECKBOX_ITEMS = [
-  "I understand Senior Tech is an AI diagnostic assistant and does not replace professional judgment.",
-  "I confirm I hold a valid EPA 608 certification for refrigerant handling.",
-  "I acknowledge all electrical work must comply with NEC and local codes.",
-  "I will not rely solely on AI recommendations for life-safety decisions.",
-  "I accept responsibility for verifying all diagnostic suggestions before acting.",
-  "I understand my diagnostic sessions may be reviewed to improve the service.",
-  "I agree to the Terms of Service and Privacy Policy.",
-  "I consent to receive electronic communications regarding my account.",
-];
-
-const TERMS_PREVIEW = `Senior Tech HVAC Diagnostic Assistant — Terms of Service
-
+const FULL_TERMS = `SENIOR TECH HVAC DIAGNOSTIC ASSISTANT
+TERMS OF SERVICE & PROFESSIONAL ACKNOWLEDGMENT
 Last updated: March 2026
 
+───────────────────────────────────────────────
+
 1. ACCEPTANCE OF TERMS
-By creating an account and using the Senior Tech application ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to all terms, do not use the Service.
+
+By creating an account and using the Senior Tech application ("Service"), you agree to be legally bound by these Terms of Service ("Terms"), our Privacy Policy, and all applicable laws and regulations. If you do not agree to all of these terms, do not create an account or use the Service.
+
+Your use of the Service constitutes your acceptance of these Terms on behalf of yourself and, where applicable, your business.
+
+───────────────────────────────────────────────
 
 2. SERVICE DESCRIPTION
-Senior Tech is an AI-powered diagnostic assistant designed to support licensed HVAC professionals. The Service provides diagnostic suggestions, technical reference information, and gauge-reading assistance. The Service does not replace professional certification, training, or field experience.
 
-3. ELIGIBILITY
-You must hold a valid EPA Section 608 certification to use this Service. You represent and warrant that all credentials provided during registration are accurate and current.
+Senior Tech is an AI-powered diagnostic assistant designed exclusively to support licensed HVAC/R professionals in their field work. The Service provides:
 
-4. LIMITATION OF LIABILITY
-Senior Tech and its operators shall not be liable for any damages arising from reliance on AI-generated diagnostic suggestions. All recommendations must be independently verified by a qualified technician before implementation.`;
+  • AI-assisted diagnostic guidance based on symptoms and measurements
+  • Data plate reading and equipment identification from photographs
+  • Technical specifications and reference data
+  • Installation and service manual retrieval
+  • Gauge reading interpretation and refrigerant data
+  • Service note generation for work orders
+
+The Service is a professional support tool. It does not replace your training, certifications, field experience, or professional judgment. All AI-generated guidance must be independently verified by a qualified technician before any action is taken.
+
+───────────────────────────────────────────────
+
+3. ELIGIBILITY AND PROFESSIONAL REQUIREMENTS
+
+To use this Service, you must:
+
+  a) Hold a valid EPA Section 608 certification for refrigerant handling, OR be directly supervised by someone who does;
+  b) Be employed in, or operating, a licensed HVAC/R contracting business where applicable by state law;
+  c) Be 18 years of age or older;
+  d) Have provided accurate and current professional credentials during registration;
+  e) Maintain all required certifications and licenses in good standing for the duration of your use.
+
+You represent and warrant that all information provided during registration is truthful, accurate, and current. Misrepresentation of credentials is grounds for immediate account termination.
+
+───────────────────────────────────────────────
+
+4. PROFESSIONAL RESPONSIBILITY
+
+You acknowledge and agree that:
+
+  a) You are solely responsible for all diagnostic decisions, repair actions, and work performed in the field;
+  b) AI-generated recommendations are suggestions only — you must verify each recommendation before acting on it;
+  c) You will not bypass your professional judgment based solely on AI output;
+  d) Live electrical work, refrigerant handling, and gas system work carry serious injury and death risks — you must follow all applicable safety codes, manufacturer procedures, and OSHA standards;
+  e) Senior Tech does not hold any professional license and cannot be responsible for the outcome of any repair, installation, or diagnostic;
+  f) You will comply with all applicable federal, state, and local codes including NEC, local mechanical codes, EPA Section 608, and all relevant manufacturer guidelines.
+
+───────────────────────────────────────────────
+
+5. ASSUMPTION OF RISK
+
+HVAC/R service involves serious hazards including but not limited to:
+
+  • High-voltage electrical systems (120V, 240V, 480V and above)
+  • High-pressure refrigerant systems
+  • Natural gas and propane fuel systems
+  • Carbon monoxide and combustion hazards
+  • Heights and confined spaces
+  • Rotating machinery
+
+By using this Service, you acknowledge these risks and accept full personal responsibility for your safety and the safety of others in the work environment. You agree that Senior Tech bears no liability for injury, death, property damage, or any other harm arising from your use of information provided by the Service.
+
+───────────────────────────────────────────────
+
+6. NO ACCOUNT SHARING
+
+Your account is personal and non-transferable. You may not:
+
+  a) Share your login credentials with any other person;
+  b) Allow another person to use your account;
+  c) Create accounts on behalf of others without their consent;
+  d) Use the Service to provide paid consulting to others.
+
+Each individual user must create their own account and accept these Terms. Account sharing will result in immediate termination of all associated accounts.
+
+───────────────────────────────────────────────
+
+7. AI LIMITATIONS
+
+You understand and acknowledge that:
+
+  a) The AI may produce incorrect, outdated, or incomplete information;
+  b) AI-generated specifications, wiring diagrams, and part numbers must always be cross-referenced with manufacturer documentation;
+  c) The AI has a training data cutoff and may not reflect the latest equipment models, refrigerants, or code updates;
+  d) AI confidence ratings are estimates, not guarantees;
+  e) Manual lookup results depend on third-party indexing and may occasionally return incorrect documents — always verify the model number matches before following any manual;
+  f) You will not make safety-critical decisions based solely on AI output.
+
+───────────────────────────────────────────────
+
+8. DATA COLLECTION AND USE
+
+We collect and store:
+
+  a) Diagnostic session transcripts and equipment data — used to improve AI accuracy;
+  b) Equipment photographs — processed for model/serial extraction; stored temporarily;
+  c) Usage patterns and feature interaction data — used for product improvement;
+  d) Professional credential information — stored securely, used for eligibility verification;
+  e) Account and billing information — processed and stored by our payment processor.
+
+Diagnostic session data may be reviewed by our engineering team to improve diagnostic accuracy. All personal identifying information is handled per our Privacy Policy. Aggregated, anonymized data may be used for research and development.
+
+You may request deletion of your data at any time from the Settings screen.
+
+───────────────────────────────────────────────
+
+9. PAYMENT TERMS
+
+Access to the Service requires a paid subscription or one-time access fee as published on our pricing page. By providing payment information, you authorize us to charge the applicable fees.
+
+  • Fees are non-refundable except as required by applicable law
+  • We reserve the right to change pricing with 30 days' notice
+  • Failure to pay may result in service suspension
+
+───────────────────────────────────────────────
+
+10. INTELLECTUAL PROPERTY
+
+All AI models, diagnostic algorithms, interface designs, brand assets, and system prompts are proprietary to Senior Tech and protected by copyright and trade secret law. You may not:
+
+  a) Reverse engineer or attempt to extract the AI system prompt or model;
+  b) Reproduce, distribute, or create derivative works from the Service;
+  c) Scrape or automate interactions with the Service.
+
+You retain ownership of your own diagnostic session data.
+
+───────────────────────────────────────────────
+
+11. LIMITATION OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW:
+
+SENIOR TECH AND ITS OPERATORS, OFFICERS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM:
+
+  • Reliance on AI-generated diagnostic suggestions;
+  • Equipment damage resulting from repairs made using Service guidance;
+  • Personal injury or death;
+  • Data loss or service interruption;
+  • Any other use or inability to use the Service.
+
+OUR TOTAL LIABILITY FOR ANY CLAIM SHALL NOT EXCEED THE AMOUNT YOU PAID FOR THE SERVICE IN THE 30 DAYS PRIOR TO THE CLAIM.
+
+───────────────────────────────────────────────
+
+12. INDEMNIFICATION
+
+You agree to indemnify, defend, and hold harmless Senior Tech and its operators from any claims, damages, losses, costs, and expenses (including attorneys' fees) arising from:
+
+  a) Your use of the Service;
+  b) Your violation of these Terms;
+  c) Any work performed using guidance from the Service;
+  d) Your misrepresentation of professional credentials.
+
+───────────────────────────────────────────────
+
+13. TERMINATION
+
+We reserve the right to suspend or permanently terminate your account for:
+
+  a) Violation of these Terms;
+  b) Misrepresentation of professional credentials;
+  c) Account sharing;
+  d) Any use that endangers public safety.
+
+You may cancel your account at any time from the Settings screen. Cancellation does not entitle you to a refund of any paid fees.
+
+───────────────────────────────────────────────
+
+14. GOVERNING LAW AND DISPUTES
+
+These Terms are governed by the laws of the State of Texas, without regard to conflict of law provisions. Any disputes shall be resolved by binding arbitration in Travis County, Texas, except that either party may seek injunctive relief in court for intellectual property violations.
+
+───────────────────────────────────────────────
+
+15. CHANGES TO TERMS
+
+We may update these Terms from time to time. Material changes will be communicated via the app or email with at least 14 days' notice. Continued use of the Service after the effective date constitutes acceptance of the revised Terms.
+
+───────────────────────────────────────────────
+
+16. CONTACT
+
+For questions regarding these Terms, contact: legal@seniortech.app
+
+───────────────────────────────────────────────
+
+BY TAPPING "I ACCEPT" BELOW, YOU CONFIRM THAT:
+
+  ✓ You have read and understood these Terms in their entirety
+  ✓ You hold a valid EPA 608 certification or work under direct supervision of one
+  ✓ You accept full professional responsibility for all field work you perform
+  ✓ You understand the AI is a support tool, not a replacement for your judgment
+  ✓ You will not share your account with others
+  ✓ You are 18 years of age or older
+
+`;
 
 interface TermsScreenProps {
-  checkedItems: boolean[];
-  onToggle: (index: number) => void;
-  onSelectAll: () => void;
   onContinue: () => void;
   onBack: () => void;
   error?: string | null;
 }
 
 export default function TermsScreen({
-  checkedItems,
-  onToggle,
-  onSelectAll,
   onContinue,
   onBack,
   error,
 }: TermsScreenProps) {
-  const [showModal, setShowModal] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [hasReachedBottom, setHasReachedBottom] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
-  const allChecked = checkedItems.every(Boolean);
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    const progress = scrollHeight <= clientHeight
+      ? 1
+      : scrollTop / (scrollHeight - clientHeight);
+    setScrollProgress(Math.min(progress, 1));
+    if (progress >= 0.97 && !hasReachedBottom) {
+      setHasReachedBottom(true);
+    }
+  }, [hasReachedBottom]);
 
   return (
-    <div className="flex flex-col min-h-screen px-6 py-8 dot-grid">
-      {/* Back */}
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 mb-4 text-sm self-start transition-opacity hover:opacity-80 min-h-[44px]"
-        style={{ color: "var(--outline)" }}
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back
-      </button>
+    <div className="flex flex-col h-screen" style={{ backgroundColor: "var(--background)" }}>
 
-      {/* Inline error message — shown below back button, never covers it */}
-      {error && (
-        <div
-          className="w-full max-w-sm mb-4 p-3 rounded-lg text-sm"
-          style={{
-            backgroundColor: "rgba(239, 68, 68, 0.1)",
-            color: "#ef4444",
-            border: "1px solid rgba(239, 68, 68, 0.3)",
-            fontFamily: "Inter, sans-serif",
-          }}
+      {/* ── Header ── */}
+      <div className="flex-shrink-0 px-6 pt-8 pb-4">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 mb-5 text-sm self-start transition-opacity hover:opacity-80 min-h-[44px]"
+          style={{ color: "var(--outline)" }}
         >
-          {error}
-        </div>
-      )}
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </button>
 
-      {/* Header row */}
-      <div className="flex items-center justify-between mb-6 max-w-sm w-full">
+        {error && (
+          <div
+            className="mb-4 p-3 rounded-lg text-sm"
+            style={{
+              backgroundColor: "rgba(239, 68, 68, 0.1)",
+              color: "#ef4444",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
         <h1
-          className="text-xl tracking-wider font-bold uppercase"
-          style={{
-            fontFamily: "'Barlow Condensed', sans-serif",
-            color: "var(--on-surface)",
-          }}
+          className="text-xl tracking-wider font-bold uppercase mb-1"
+          style={{ fontFamily: "'Barlow Condensed', sans-serif", color: "var(--on-surface)" }}
         >
           TERMS & CONDITIONS
         </h1>
-        <button
-          onClick={onSelectAll}
-          className="text-xs uppercase tracking-wider font-semibold transition-opacity hover:opacity-80"
+        <p
+          className="text-xs"
+          style={{ fontFamily: "Inter, sans-serif", color: "var(--outline)" }}
+        >
+          Read to the bottom to accept
+        </p>
+
+        {/* Scroll progress bar */}
+        <div
+          className="mt-3 h-0.5 w-full rounded-full overflow-hidden"
+          style={{ backgroundColor: "var(--surface-container)" }}
+        >
+          <div
+            className="h-full rounded-full transition-all duration-150"
+            style={{
+              width: `${Math.round(scrollProgress * 100)}%`,
+              backgroundColor: hasReachedBottom ? "var(--primary-accent)" : "var(--outline)",
+            }}
+          />
+        </div>
+        <p
+          className="text-[10px] uppercase tracking-wider mt-1 text-right"
           style={{
             fontFamily: "'Barlow Condensed', sans-serif",
-            color: "var(--primary-accent)",
+            color: hasReachedBottom ? "var(--primary-accent)" : "var(--outline)",
           }}
         >
-          SELECT ALL
+          {hasReachedBottom ? "READ ✓" : `${Math.round(scrollProgress * 100)}% read`}
+        </p>
+      </div>
+
+      {/* ── Scrollable Terms Body ── */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto px-6"
+        style={{ minHeight: 0 }}
+      >
+        <div
+          className="rounded-lg p-4 mb-4"
+          style={{
+            backgroundColor: "var(--surface-container)",
+            border: "1px solid var(--outline-variant, #3e484f)",
+          }}
+        >
+          <pre
+            className="text-xs leading-relaxed whitespace-pre-wrap"
+            style={{ color: "var(--on-surface)", fontFamily: "Inter, sans-serif" }}
+          >
+            {FULL_TERMS}
+          </pre>
+        </div>
+      </div>
+
+      {/* ── Accept Button ── */}
+      <div className="flex-shrink-0 px-6 pb-8 pt-4">
+        {!hasReachedBottom && (
+          <p
+            className="text-center text-xs mb-3 uppercase tracking-wider"
+            style={{ fontFamily: "'Barlow Condensed', sans-serif", color: "var(--outline)" }}
+          >
+            ↓ Scroll to the bottom to accept
+          </p>
+        )}
+        <button
+          onClick={onContinue}
+          disabled={!hasReachedBottom}
+          className="w-full h-12 rounded-lg text-sm font-bold uppercase tracking-wider transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-2"
+          style={{
+            fontFamily: "'Barlow Condensed', sans-serif",
+            backgroundColor: hasReachedBottom ? "var(--primary-accent)" : "var(--surface-container-high)",
+            color: hasReachedBottom ? "#0e0e0e" : "var(--outline)",
+          }}
+        >
+          {hasReachedBottom && <CheckCircle2 className="w-4 h-4" />}
+          {hasReachedBottom ? "I ACCEPT — CREATE MY ACCOUNT" : "READ ALL TERMS TO CONTINUE"}
         </button>
       </div>
-
-      {/* Terms Preview */}
-      <div
-        className="w-full max-w-sm rounded-lg p-4 mb-4 max-h-40 overflow-y-auto"
-        style={{
-          backgroundColor: "var(--surface-container)",
-          border: "1px solid var(--outline-variant, #3e484f)",
-        }}
-      >
-        <pre
-          className="text-xs leading-relaxed whitespace-pre-wrap"
-          style={{
-            color: "var(--outline)",
-            fontFamily: "Inter, sans-serif",
-          }}
-        >
-          {TERMS_PREVIEW}
-        </pre>
-      </div>
-
-      {/* Read Full Terms */}
-      <button
-        onClick={() => setShowModal(true)}
-        className="text-xs uppercase tracking-wider font-semibold mb-6 self-start transition-opacity hover:opacity-80"
-        style={{
-          fontFamily: "'Barlow Condensed', sans-serif",
-          color: "var(--primary-accent)",
-        }}
-      >
-        READ FULL TERMS
-      </button>
-
-      {/* Checkboxes */}
-      <div className="flex flex-col gap-3 w-full max-w-sm">
-        {CHECKBOX_ITEMS.map((text, index) => (
-          <button
-            key={index}
-            onClick={() => onToggle(index)}
-            className="flex items-start gap-3 text-left min-h-[48px] py-2 transition-colors"
-          >
-            <div
-              className="flex-shrink-0 w-6 h-6 rounded flex items-center justify-center mt-0.5 transition-all duration-150"
-              style={{
-                backgroundColor: checkedItems[index]
-                  ? "var(--primary-accent)"
-                  : "transparent",
-                border: checkedItems[index]
-                  ? "2px solid var(--primary-accent)"
-                  : "2px solid var(--outline-variant, #3e484f)",
-              }}
-            >
-              {checkedItems[index] && (
-                <Check className="w-4 h-4" style={{ color: "#0e0e0e" }} />
-              )}
-            </div>
-            <span
-              className="text-xs leading-relaxed"
-              style={{
-                fontFamily: "Inter, sans-serif",
-                color: checkedItems[index]
-                  ? "var(--on-surface)"
-                  : "var(--outline)",
-              }}
-            >
-              {text}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Create Account Button */}
-      <button
-        onClick={onContinue}
-        disabled={!allChecked}
-        className={`w-full max-w-sm h-12 rounded-lg text-sm font-bold uppercase tracking-wider mt-8 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] ${
-          allChecked ? "animate-subtle-pulse" : ""
-        }`}
-        style={{
-          fontFamily: "'Barlow Condensed', sans-serif",
-          backgroundColor: allChecked
-            ? "var(--primary-accent)"
-            : "var(--surface-container-high)",
-          color: allChecked ? "#0e0e0e" : "var(--outline)",
-        }}
-      >
-        CREATE MY ACCOUNT
-      </button>
-
-      {/* Full Terms Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-          <div
-            className="absolute inset-0"
-            style={{ backgroundColor: "rgba(0, 0, 0, 0.8)" }}
-            onClick={() => setShowModal(false)}
-          />
-          <div
-            className="relative w-full max-w-lg max-h-[80vh] rounded-lg p-6 overflow-y-auto z-10"
-            style={{
-              backgroundColor: "var(--surface-container)",
-              border: "1px solid var(--outline-variant, #3e484f)",
-            }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2
-                className="text-lg tracking-wider font-bold uppercase"
-                style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  color: "var(--on-surface)",
-                }}
-              >
-                FULL TERMS OF SERVICE
-              </h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="transition-opacity hover:opacity-80"
-                style={{ color: "var(--outline)" }}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <pre
-              className="text-xs leading-relaxed whitespace-pre-wrap"
-              style={{
-                color: "var(--on-surface)",
-                fontFamily: "Inter, sans-serif",
-              }}
-            >
-              {TERMS_PREVIEW}
-              {`
-
-5. USER RESPONSIBILITIES
-You are solely responsible for:
-- Verifying all AI-generated diagnostic suggestions before implementation
-- Ensuring compliance with all applicable codes and regulations
-- Maintaining valid certifications and licenses
-- Proper handling of refrigerants per EPA regulations
-- Following all manufacturer safety guidelines
-
-6. DATA COLLECTION AND PRIVACY
-We collect diagnostic session data, gauge readings, and usage patterns to improve our AI models. Personal identification information is handled per our Privacy Policy. Session data may be anonymized and used for service improvement.
-
-7. ELECTRONIC COMMUNICATIONS
-By creating an account, you consent to receive electronic communications from Senior Tech regarding your account, service updates, and diagnostic features. You may opt out of non-essential communications at any time.
-
-8. INTELLECTUAL PROPERTY
-All AI models, diagnostic algorithms, and interface designs are proprietary to Senior Tech. Users retain ownership of their diagnostic session data.
-
-9. TERMINATION
-We reserve the right to suspend or terminate accounts that violate these Terms or misrepresent professional credentials.
-
-10. GOVERNING LAW
-These Terms shall be governed by the laws of the State of Texas, without regard to conflict of law provisions.`}
-            </pre>
-          </div>
-        </div>
-      )}
-
-      {/* Pulse animation style */}
-      <style jsx>{`
-        @keyframes subtle-pulse {
-          0%,
-          100% {
-            box-shadow: 0 0 0 0 rgba(79, 195, 247, 0.4);
-          }
-          50% {
-            box-shadow: 0 0 0 6px rgba(79, 195, 247, 0);
-          }
-        }
-        .animate-subtle-pulse {
-          animation: subtle-pulse 2s infinite;
-        }
-      `}</style>
     </div>
   );
 }

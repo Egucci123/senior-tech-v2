@@ -318,7 +318,7 @@ export function useChat(user: User | null): UseChatReturn {
         );
         if (braveManualMatch) {
           try {
-            const braveManuals: { type: string; url: string; title: string }[] =
+            const braveManuals: { type: string; url: string; title: string; source?: 1 | 2 | 3 }[] =
               JSON.parse(braveManualMatch[1]);
             const cleanContent = assistantContent
               .replace(/<!-- BRAVE_MANUALS:[\s\S]+? -->/, "")
@@ -331,7 +331,7 @@ export function useChat(user: User | null): UseChatReturn {
             );
 
             /* Push real Brave-found manuals to Manuals tab */
-            const manualUrls = braveManuals.map((m) => ({ type: m.type, url: m.url }));
+            const manualUrls = braveManuals.map((m) => ({ type: m.type, url: m.url, source: m.source }));
             const brandFromState = sessionState?.equipment?.brand || "";
             const modelFromState = sessionState?.equipment?.model || "";
             addManual({

@@ -247,7 +247,7 @@ export async function createManualSearch(
   userId: string,
   modelNumber: string,
   brand: string,
-  manualUrls: { type: string; url: string }[]
+  manualUrls: { type: string; url: string; source?: 1 | 2 | 3 }[]
 ) {
   // Check for existing entry — one row per user+model, update if exists
   const { data: existing } = await supabase

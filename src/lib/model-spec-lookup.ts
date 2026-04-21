@@ -1,17 +1,26 @@
 /**
- * Web-based model spec lookup for Senior Tech.
+ * Web-based model spec + manual lookup for Senior Tech.
  *
- * MANUAL SOURCE PRIORITY:
- *   1. ManualsLib product page  — most reliable, every major HVAC brand covered
- *   2. Manufacturer direct PDF  — OEM domain, opens PDF directly
- *   3. ManualsLib search URL    — guaranteed fallback, always a live link
+ * MANUAL LOOKUP STRATEGY (multi-layer, sequential fallback):
+ *   1. Brave quoted search:  site:manualslib.com Brand "FullModel"
+ *   2. Brave unquoted search: site:manualslib.com Brand FullModel (more results)
+ *   3. Brave base-model search: site:manualslib.com Brand BaseModel
+ *   4. Fallback: ManualsLib search URL — always valid, user finds it manually
  *
- * SPEC CONTEXT: Manufacturer domain + spec results fed to Sonnet as ground truth.
+ * MODEL MATCHING:
+ *   Normalize both sides (strip non-alphanumeric, lowercase) before comparing.
+ *   Handles ManualsLib URL patterns like /Goodman-Gid91au075d12b-123456.html
+ *   and titles like "Goodman GID91AU075D12B Installation Manual".
+ *
+ * SPEC CONTEXT:
+ *   Parallel spec search feeds AI model-specific electrical/physical data.
  */
 
 import { getBaseModel, estimateYearFromSerial } from "./model-utils";
 import { getBrandDocDomain, normalizeBrandForManualsLib } from "./brand-domains";
 import { AI_MODELS, ANTHROPIC_API_URL, ANTHROPIC_VERSION } from "./ai-config";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ExtractedModel {
   brand: string;
@@ -19,6 +28,27 @@ interface ExtractedModel {
   serial: string;
   usage?: { input_tokens: number; output_tokens: number };
 }
+
+export interface BraveResult {
+  title: string;
+  description: string;
+  url: string;
+}
+
+export interface ManualEntry {
+  type: string;   // "INSTALL" | "SERVICE" | "WIRING" | "PARTS"
+  url: string;
+  title: string;
+  source: 1 | 2 | 3;  // 1=ManualsLib direct, 2=OEM direct, 3=search fallback
+}
+
+export interface BraveLookupResult {
+  specsContext: string;
+  manualUrls: ManualEntry[];
+  noManualReason?: string;
+}
+
+// ─── Image Model Extraction ───────────────────────────────────────────────────
 
 export async function extractModelFromImage(
   base64: string,
@@ -48,21 +78,22 @@ export async function extractModelFromImage(
                 type: "text",
                 text: `Return ONLY a JSON object — no markdown, no explanation. Keys: brand, model, serial.
 
-Extract every character of the model number exactly as printed — do not truncate or paraphrase.
+Extract every character of the model number exactly as printed — do not truncate, abbreviate, or paraphrase.
+Preserve all dashes, letters, and numbers as shown on the data plate.
 
-If brand is NOT printed on the plate, infer it from the model number prefix:
-GSX/GSXC/GSXN/DSXC/AVXC/GMV/GMP/GPH/GPC → Goodman
-SSX/ASX/AWX/AVPTC/ARUF → Amana
-2AC/4AC/EL/XC/XP/ML → Ducane or Lennox (use Ducane if serial starts with letter+digits pattern)
+If brand is NOT printed on the plate, infer from the model prefix:
+GSX/GSXC/GSXN/DSXC/AVXC/GMV/GMP/GPH/GPC/GID/GMVC/GMSS → Goodman
+SSX/ASX/AWX/AVPTC/ARUF/AMVC/AMSS → Amana
+2AC/4AC/EL/XC/XP/ML/SL/ELO → Lennox (unless serial starts with letter+digit → Ducane)
 ZE/ZF/ZJ/ZH/YHE/YCE → York
-24ACC/24ANA/24SNB/FB4C/FV4C → Carrier
-T4A/4TTB/4TTR/4TXB/TEM → Trane
-RA/RASL/UAMB/RH1T → Rheem
-CA4/CA5/N4A/N4H → Heil or Tempstar
-WCA/WPH → Westinghouse or Nordyne
-If model prefix not recognized, leave brand as empty string.
+24ACC/24ANA/24SNB/FB4C/FV4C/58STA/58MVA → Carrier
+T4A/4TTB/4TTR/4TXB/TEM/XR/XL/TVA/TUE → Trane
+RA/RASL/UAMB/RH1T/RPNE → Rheem
+CA4/CA5/N4A/N4H/TCP → Heil or Tempstar
+WCA/WPH/MV/MG → Nordyne/Westinghouse
+If unrecognized, leave brand as empty string.
 
-Example: {"brand":"Goodman","model":"GSX160361","serial":"1910123456"}`,
+Example: {"brand":"Goodman","model":"GID91AU075D12B-1A","serial":"1910123456"}`,
               },
             ],
           },
@@ -99,41 +130,9 @@ Example: {"brand":"Goodman","model":"GSX160361","serial":"1910123456"}`,
   }
 }
 
-export interface BraveResult {
-  title: string;
-  description: string;
-  url: string;
-}
+// ─── Brave Search ─────────────────────────────────────────────────────────────
 
-export interface BraveLookupResult {
-  specsContext: string;
-  manualUrls: { type: string; url: string; title: string; source: 1 | 2 | 3 }[];
-  noManualReason?: string;
-}
-
-function isDirectPdf(url: string): boolean {
-  const u = url.toLowerCase();
-  return u.endsWith(".pdf") || u.includes("/pdf/") || u.includes(".pdf?");
-}
-
-function classifyManualUrl(title: string, url: string): string | null {
-  const t = (title + " " + url).toLowerCase();
-  if (t.includes("wiring") || t.includes("schematic") || t.includes("diagram")) return "WIRING";
-  if (t.includes("parts") || t.includes("catalog") || t.includes("exploded")) return "PARTS";
-  if (
-    t.includes("service") || t.includes("technical") || t.includes("repair") ||
-    t.includes("troubleshoot") || t.includes("diagnostic") || t.includes("/sm/")
-  ) return "SERVICE";
-  if (
-    t.includes("install") || t.includes("setup") || t.includes("iom") ||
-    t.includes("owner") || t.includes("operation") || t.includes("/im/")
-  ) return "INSTALL";
-  if (t.includes(".pdf") || t.includes("/pdf/") || t.includes("manual") || t.includes("guide")) return "INSTALL";
-  if (isDirectPdf(url)) return "INSTALL";
-  return null;
-}
-
-async function braveSearch(query: string, key: string, count = 6): Promise<BraveResult[]> {
+async function braveSearch(query: string, key: string, count = 8): Promise<BraveResult[]> {
   try {
     const res = await fetch(
       `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${count}`,
@@ -153,12 +152,112 @@ async function braveSearch(query: string, key: string, count = 6): Promise<Brave
   }
 }
 
-/** ManualsLib search URL — brand + exact model */
-function manualsLibSearch(brand: string, model: string): string {
+// ─── Model Variant Computation ────────────────────────────────────────────────
+
+/**
+ * Compute all model variants to try, in priority order:
+ *   1. Full model with revision stripped (GID91AU075D12B from GID91AU075D12B-1A)
+ *   2. Full model as-given (GID91AU075D12B-1A)
+ *   3. Base model (GID91AU075, GSX160601, etc.)
+ * Deduped so we never run the same string twice.
+ */
+function getModelVariants(model: string): string[] {
+  const stripped = model
+    .replace(/[-_]\d{1,2}[A-Z]{1,2}$/i, "")   // strip -1A, -2B, -AB
+    .replace(/[-_][A-Z]{1,2}\d{1,2}$/i, "")    // strip -A1, -B2
+    .replace(/[\s\-_]/g, "")
+    .toUpperCase();
+
+  const full = model.replace(/[\s\-_]/g, "").toUpperCase();
+  const base = getBaseModel(model).replace(/[^A-Z0-9]/g, "").toUpperCase();
+
+  return [...new Set([stripped, full, base].filter((v) => v.length >= 5))];
+}
+
+// ─── Result Matching ──────────────────────────────────────────────────────────
+
+/**
+ * Strip everything except alphanumeric, lowercase.
+ * Lets us match "GID91AU075D12B" against URL segment "Gid91au075d12b"
+ * and against titles with spaces like "GID91 AU075D 12B".
+ */
+function norm(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/**
+ * Returns true if the result's title+URL contains any of the model variants.
+ * Uses normalized comparison so separators/case differences don't break matching.
+ * Requires variant to be >= 6 chars to avoid false positives on short strings.
+ */
+function resultMatchesAnyVariant(r: BraveResult, variants: string[]): boolean {
+  const normText = norm(r.title + " " + r.url);
+  return variants.some((v) => {
+    const nv = norm(v);
+    return nv.length >= 6 && normText.includes(nv);
+  });
+}
+
+function isManualsLibUrl(url: string): boolean {
+  return url.toLowerCase().includes("manualslib.com");
+}
+
+/**
+ * Score a ManualsLib result for ranking:
+ *   /products/ page = 3 (product listing with all manuals)
+ *   /manual/   page = 2 (individual manual)
+ *   /brand/    page = 1 (brand listing — less specific)
+ *   anything else  = 0
+ */
+function scoreManualsLibUrl(url: string): number {
+  const u = url.toLowerCase();
+  if (u.includes("/products/")) return 3;
+  if (u.includes("/manual/"))   return 2;
+  if (u.includes("/brand/"))    return 1;
+  return 0;
+}
+
+/**
+ * Find the best ManualsLib result from a set of Brave results.
+ * Prefers /products/ pages; falls back to /manual/ pages; ignores non-ML results.
+ */
+function findBestManualsLibMatch(
+  results: BraveResult[],
+  variants: string[]
+): BraveResult | null {
+  const mlResults = results.filter((r) => isManualsLibUrl(r.url));
+  const matching = mlResults.filter((r) => resultMatchesAnyVariant(r, variants));
+
+  if (matching.length === 0) return null;
+
+  // Sort by URL quality score descending
+  matching.sort((a, b) => scoreManualsLibUrl(b.url) - scoreManualsLibUrl(a.url));
+  return matching[0];
+}
+
+// ─── Manual Type Classification ───────────────────────────────────────────────
+
+function classifyManualType(title: string, url: string): string {
+  const t = (title + " " + url).toLowerCase();
+  if (t.includes("wiring") || t.includes("schematic") || t.includes("diagram")) return "WIRING";
+  if (t.includes("parts") || t.includes("catalog") || t.includes("exploded"))    return "PARTS";
+  if (
+    t.includes("service") || t.includes("technical") || t.includes("repair") ||
+    t.includes("troubleshoot") || t.includes("sm/") || t.includes("/sm-")
+  ) return "SERVICE";
+  return "INSTALL";
+}
+
+// ─── ManualsLib Fallback Search URL ───────────────────────────────────────────
+
+function manualsLibSearchUrl(brand: string, variants: string[]): string {
   const mlBrand = normalizeBrandForManualsLib(brand);
-  const q = encodeURIComponent(`${mlBrand} ${model}`);
+  // Use the first (most specific) variant for the search
+  const q = encodeURIComponent(`${mlBrand} ${variants[0] ?? ""}`);
   return `https://www.manualslib.com/search/?q=${q}`;
 }
+
+// ─── Main Export ──────────────────────────────────────────────────────────────
 
 export async function fetchBraveSpecs(
   brand: string,
@@ -168,82 +267,131 @@ export async function fetchBraveSpecs(
   const key = process.env.BRAVE_SEARCH_API_KEY;
   if (!key || !brand || !model) return null;
 
-  // Pre-2005 equipment — manuals rarely digitized, skip lookup entirely
+  // Pre-2005: manuals rarely digitized — skip lookup, tell the tech
   if (serial) {
     const mfgYear = estimateYearFromSerial(brand, serial);
     if (mfgYear !== null && mfgYear < 2005) {
       return {
         specsContext: "",
         manualUrls: [],
-        noManualReason: `This unit was manufactured in ${mfgYear}. Digital manuals for equipment from this era are rarely available online — documentation was not widely digitized before 2005. Check with your wholesaler or the manufacturer's technical support line for service literature.`,
+        noManualReason:
+          `This unit was manufactured in ${mfgYear}. Digital manuals for equipment this old are rarely available online. ` +
+          `Check with your wholesaler or call the manufacturer's tech support line for service literature.`,
       };
     }
   }
 
-  const mfrDomain = getBrandDocDomain(brand);
-  const baseModel = getBaseModel(model);
+  const mlBrand    = normalizeBrandForManualsLib(brand);
+  const mfrDomain  = getBrandDocDomain(brand);
+  const baseModel  = getBaseModel(model);
+  const variants   = getModelVariants(model);
+  const primaryVar = variants[0]; // Most specific: stripped revision code
 
-  // "Search model" — strip trailing revision/variant suffixes like -1A, -2B, _AA
-  // so the Brave query uses e.g. GID91AU075D12B instead of the truncated GID91AU07
-  const searchModel = model
-    .replace(/[-_]\d{1,2}[A-Z]{1,2}$/i, "")  // strip trailing revision code (-1A, -2B, -AB)
-    .replace(/[\s\-_]/g, "")                   // remove separators
-    .toUpperCase();
+  // ── Stage 1: Parallel — quoted ManualsLib + spec search ──────────────────
+  const [quotedResults, specResults] = await Promise.all([
+    // Quoted model in search = Brave must contain exact string
+    braveSearch(`site:manualslib.com ${mlBrand} "${primaryVar}"`, key, 10),
+    // Spec context: OEM domain first, generic fallback
+    mfrDomain
+      ? braveSearch(`site:${mfrDomain} ${baseModel} specifications`, key, 5)
+      : braveSearch(`${brand} ${baseModel} specifications technical data`, key, 5),
+  ]);
 
-  try {
-    const mlBrand = normalizeBrandForManualsLib(brand);
-    // Use full searchModel for ManualsLib query — baseModel is often too truncated
-    // (e.g. GID91AU075D12B is indexed as-is; GID91AU07 returns wrong products)
-    const [manualsLibResults, mfrResults, specResults] = await Promise.all([
-      braveSearch(`site:manualslib.com ${mlBrand} ${searchModel}`, key, 6),
-      mfrDomain
-        ? braveSearch(`site:${mfrDomain} ${baseModel} filetype:pdf`, key, 8)
-        : braveSearch(`${brand} ${baseModel} filetype:pdf service installation`, key, 6),
-      braveSearch(`${brand} ${baseModel} specifications technical data voltage`, key, 5),
-    ]);
+  let manualsLibMatch = findBestManualsLibMatch(quotedResults, variants);
 
-    if (!manualsLibResults.length && !mfrResults.length && !specResults.length) return null;
+  // ── Stage 2: Unquoted search — more results, less strict Brave query ──────
+  if (!manualsLibMatch) {
+    const unquotedResults = await braveSearch(
+      `site:manualslib.com ${mlBrand} ${primaryVar}`,
+      key, 10
+    );
+    manualsLibMatch = findBestManualsLibMatch(unquotedResults, variants);
+  }
 
-    // ── Spec context for AI ────────────────────────────────────────
-    const specSources = [...mfrResults.slice(0, 2), ...specResults.slice(0, 3)];
-    const specLines = specSources
-      .map((r, i) => `${i + 1}. ${r.title}\n   ${r.description ?? ""}\n   ${r.url}`)
-      .join("\n");
-    const specsContext = specLines
-      ? `WEB-VERIFIED SPECS — ${brand} ${model}:\n${specLines}\n\nCRITICAL: Use these web results as your PRIMARY source for this specific model. Your training data may have wrong specs for this exact unit. If inducer voltage, board type, capacitor setup, or any electrical spec is mentioned in these results — use that, not your default assumption. If a spec is NOT in these results and NOT visible in the photo — say "I need to verify that for this exact model" rather than guessing.`
-      : "";
+  // ── Stage 3: Try all remaining variants individually ─────────────────────
+  if (!manualsLibMatch) {
+    for (const variant of variants.slice(1)) {
+      if (norm(variant) === norm(primaryVar)) continue; // skip if same as Stage 1
+      const vResults = await braveSearch(
+        `site:manualslib.com ${mlBrand} "${variant}"`,
+        key, 10
+      );
+      manualsLibMatch = findBestManualsLibMatch(vResults, variants);
+      if (manualsLibMatch) break;
 
-    // ── Build single INSTALL manual URL — ManualsLib direct match only ────────
-    // If no exact match for this model, return noManualReason — never show a
-    // wrong product's manual or a search URL that returns unrelated results.
-    const manualUrls: BraveLookupResult["manualUrls"] = [];
-
-    // Result is valid only if the model number appears in the title or URL
-    const searchModelUpper = searchModel.toUpperCase();
-    const baseModelUpper = baseModel.toUpperCase();
-    function resultMatches(r: BraveResult): boolean {
-      const text = (r.title + " " + r.url).toUpperCase();
-      return text.includes(searchModelUpper) || text.includes(baseModelUpper);
+      // Unquoted fallback for this variant
+      const vUnquoted = await braveSearch(
+        `site:manualslib.com ${mlBrand} ${variant}`,
+        key, 10
+      );
+      manualsLibMatch = findBestManualsLibMatch(vUnquoted, variants);
+      if (manualsLibMatch) break;
     }
+  }
 
-    const manualsLibPage =
-      manualsLibResults.find((r) => r.url.includes("/products/") && resultMatches(r)) ||
-      manualsLibResults.find((r) => r.url.includes("/manual/") && resultMatches(r)) ||
-      manualsLibResults.find((r) => resultMatches(r));
+  // ── Build spec context for AI ─────────────────────────────────────────────
+  const specLines = specResults
+    .slice(0, 3)
+    .map((r, i) => `${i + 1}. ${r.title}\n   ${r.description ?? ""}\n   ${r.url}`)
+    .join("\n");
+  const specsContext = specLines
+    ? `WEB-VERIFIED SPECS — ${brand} ${model}:\n${specLines}\n\n` +
+      `CRITICAL: Use these web results as your PRIMARY source for this specific model. ` +
+      `Your training data may have incorrect specs for this exact unit. ` +
+      `If inducer voltage, board part number, capacitor size, or any electrical spec is in these results — use it. ` +
+      `If a spec is NOT here and NOT on the data plate — say "I need to verify that" rather than guessing.`
+    : "";
 
-    if (manualsLibPage) {
-      manualUrls.push({ type: "INSTALL", url: manualsLibPage.url, title: manualsLibPage.title, source: 1 });
-    } else {
-      // No verified match — tell the tech rather than show a wrong manual
-      return {
-        specsContext,
-        manualUrls: [],
-        noManualReason: `No installation manual was found on ManualsLib for ${brand} ${model}. Try searching manualslib.com directly or contact the manufacturer's technical support for service literature.`,
-      };
+  // ── Build manual URLs ─────────────────────────────────────────────────────
+  const manualUrls: ManualEntry[] = [];
+
+  if (manualsLibMatch) {
+    const manualType = classifyManualType(manualsLibMatch.title, manualsLibMatch.url);
+    manualUrls.push({
+      type: manualType,
+      url: manualsLibMatch.url,
+      title: manualsLibMatch.title,
+      source: 1,
+    });
+
+    // If we landed on a /products/ page, check if the quotedResults also has
+    // a /manual/ or wiring/service variant for the same model — add those too
+    if (manualsLibMatch.url.toLowerCase().includes("/products/")) {
+      const extras = quotedResults.filter(
+        (r) =>
+          r.url !== manualsLibMatch!.url &&
+          isManualsLibUrl(r.url) &&
+          resultMatchesAnyVariant(r, variants) &&
+          r.url.toLowerCase().includes("/manual/")
+      );
+      for (const extra of extras.slice(0, 2)) {
+        const t = classifyManualType(extra.title, extra.url);
+        if (!manualUrls.some((m) => m.type === t)) {
+          manualUrls.push({ type: t, url: extra.url, title: extra.title, source: 1 });
+        }
+      }
     }
 
     return { specsContext, manualUrls };
-  } catch {
-    return null;
   }
+
+  // ── No verified match found ───────────────────────────────────────────────
+  // Return a search URL fallback so the tech can find it manually
+  // (much better than returning nothing or a wrong manual)
+  const fallbackUrl = manualsLibSearchUrl(brand, variants);
+  return {
+    specsContext,
+    manualUrls: [
+      {
+        type: "INSTALL",
+        url: fallbackUrl,
+        title: `${brand} ${model} — ManualsLib Search`,
+        source: 3,
+      },
+    ],
+    noManualReason:
+      `Could not auto-locate the installation manual for ${brand} ${model} on ManualsLib. ` +
+      `A search link has been added to your Manuals tab — tap it to search manually. ` +
+      `If nothing comes up, try removing the last few characters of the model number.`,
+  };
 }

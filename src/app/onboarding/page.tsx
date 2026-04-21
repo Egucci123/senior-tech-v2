@@ -40,7 +40,6 @@ interface OnboardingState {
     yearsInTrade: "" | "1-3" | "4-7" | "8-12" | "13-19" | "20+";
     primaryFocus: string[];
   };
-  termsChecked: boolean[];
   completed: boolean;
 }
 
@@ -60,7 +59,6 @@ const DEFAULT_STATE: OnboardingState = {
     yearsInTrade: "",
     primaryFocus: [],
   },
-  termsChecked: new Array(8).fill(false),
   completed: false,
 };
 
@@ -70,10 +68,6 @@ function loadState(): OnboardingState {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      // Ensure termsChecked array is correct length
-      if (!parsed.termsChecked || parsed.termsChecked.length !== 8) {
-        parsed.termsChecked = new Array(8).fill(false);
-      }
       return { ...DEFAULT_STATE, ...parsed };
     }
   } catch {
@@ -440,24 +434,8 @@ export default function OnboardingPage() {
 
       {state.currentScreen === 3 && (
         <TermsScreen
-          checkedItems={state.termsChecked}
           error={error}
-          onToggle={(index) => {
-            setState((prev) => {
-              const newChecked = [...prev.termsChecked];
-              newChecked[index] = !newChecked[index];
-              return { ...prev, termsChecked: newChecked };
-            });
-          }}
-          onSelectAll={() => {
-            setState((prev) => ({
-              ...prev,
-              termsChecked: new Array(8).fill(true),
-            }));
-          }}
-          onContinue={() => {
-            handleSignUp();
-          }}
+          onContinue={() => handleSignUp()}
           onBack={() => goTo(2)}
         />
       )}
