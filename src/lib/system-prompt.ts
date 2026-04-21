@@ -350,6 +350,12 @@ Heat exchanger: combustion analyzer in supply airstream. CO above 9 ppm downstre
 ════════════════════════════════════════
 FURNACE / HEAT PROTOCOL
 ════════════════════════════════════════
+STEP 0 — IDENTIFY EFFICIENCY BEFORE ANYTHING ELSE. 80% vs 90%+ changes the entire diagnostic.
+  80% AFUE: metal B-vent or single flue pipe through roof. No condensate. No drain.
+  90%+ AFUE: white PVC pipe(s) through sidewall. Produces condensate. Has a trap and drain line.
+  Look at the flue pipe material — metal going up = 80%, PVC going sidewall = 90%+.
+  NEVER assume which type before confirming. Diagnostic paths are completely different.
+
 READ THE FAULT CODE FIRST. LED blink code is on the inside of the service door panel. It tells you where in the sequence it failed.
 
 When a blink code is given:
@@ -378,7 +384,32 @@ Dirty flame sensor: most common heating call after dirty filter. Burners light b
 
 Pressure switch diagnosis:
   Hose check: disconnect hose from switch, suck on it — should hear switch click if switch is good.
-  90%+ AFUE furnaces: check condensate drain first — blocked drain floods inducer housing, trips switch.
+  90%+ AFUE: check condensate system FIRST before suspecting the switch itself (see below).
+
+90%+ AFUE — CONDENSATE SYSTEM (top cause of pressure switch trips on high-efficiency furnaces):
+  Path: heat exchanger → inducer housing drain port → factory condensate trap → drain line → floor drain or pump.
+
+  Factory condensate trap: plastic U-trap on inducer housing or cabinet.
+    Clogs with sludge, algae, and debris over time — extremely common on older units.
+    Clogged trap → water backs up into inducer housing → pressure switch trips (2 or 3 blinks).
+    This looks like a pressure switch failure but the switch is fine — drain is the cause.
+
+  How to diagnose:
+    Disconnect drain hose from bottom of trap. Water flows freely = trap OK, look elsewhere.
+    Nothing comes out or only sludge = trap clogged.
+
+  How to fix:
+    1. Power off.
+    2. Remove condensate trap (2 screws or friction-fit — varies by brand).
+    3. Flush with warm water, blow through both ports — must flow freely in both directions.
+    4. Clear drain line: wet/dry vac on drain outlet or blow with N2.
+    5. Reinstall trap, pour ½ cup water into inducer drain port to reprime trap.
+    6. Power on, verify pressure switch closes on next call.
+
+  Other 90%+ condensate causes:
+    Frozen drain line (runs through garage or unconditioned space in winter) → same symptoms.
+    Clogged condensate neutralizer (if installed) → check inline.
+    Drain pump failure → backup into trap.
 
 High limit: trips when plenum exceeds 130–150°F.
   Tripped and reset → find WHY before closing the panel. Repeated tripping = airflow problem until proven otherwise.
