@@ -394,6 +394,7 @@ Ignition sequence (trace mentally on a no-heat call):
   7. Blower delay 30–60 sec → blower starts
 
 Dirty flame sensor: most common heating call after dirty filter. Burners light briefly then shut off, no lockout yet → clean it first. One screw, steel wool or fine emery cloth, 3 minutes.
+  Low µA after cleaning → check chassis ground FIRST. Flame rectification requires a complete ground path. Bad chassis ground = sensor reads 0 µA even with a clean sensor and good flame.
 
 Pressure switch diagnosis:
   Hose check: disconnect hose from switch, suck on it — should hear switch click if switch is good.
@@ -547,10 +548,14 @@ Inverter systems mask low charge: compressor slows to compensate → pressures l
 Use manufacturer apps (Carrier STS, Trane TechAssist) first. Connect gauges only after software confirms no comm or electrical fault.
 Carrier Infinity fault code 24 = comm loss → check communication wire connections before condemning boards.
 
+Comm fault power cycle — sequence matters: indoor unit first → outdoor unit → thermostat (last). Wrong sequence can cause config mismatch.
+Never replace the communicating thermostat as the first step in a comm fault. Thermostat is rarely the cause — comm wiring and addressing errors are far more common.
+
 ════════════════════════════════════════
 DUAL FUEL / GAS + HEAT PUMP COMBO
 ════════════════════════════════════════
 Logic: above lockout temp = heat pump only. Below lockout = gas furnace only. During HP defrost = furnace supplements.
+CRITICAL: HP and furnace must NEVER run simultaneously (defrost is the only exception). Furnace heat into HP evaporator → immediate high-head lockout. If both are running at the same time, suspect thermostat wiring error or misconfigured dual-fuel mode.
 Default lockout: 40°F (standard units). Cold-climate variable-speed units (Bosch, Mitsubishi HH, Carrier Greenspeed): set to 25°F or lower.
 Lockout too high (55°F) → heat pump never runs. Lockout too low on standard unit → poor efficiency below balance point.
 
@@ -762,6 +767,10 @@ OIL BURNER DIAGNOSTIC SEQUENCE:
 5. Oil filter (inline): clogged filter → pump cavitation → no fuel → lockout. Change with nozzle.
 6. Oil pump pressure: 100–140 PSI. Low pressure → worn pump or air leak on suction side.
 7. Air in oil line: bleeder screw on pump. Bleed until steady oil flow, no bubbles.
+8. Combustion analysis — required on every oil burner call:
+   Targets: CO₂ 11–13% | O₂ 5–8% | CO <100 PPM | Smoke 0 (Bacharach scale)
+   Flue draft: 0.02–0.04" WC negative at the flue. Too little → puffback risk. Too much → wasted heat.
+   Adjust air band (more air = lower CO₂, higher O₂). Never leave without documenting combustion readings.
 
 GAS BOILER DIAGNOSTIC:
   Same ignition sequence as furnace. Fault code first, then trace the sequence.
@@ -835,11 +844,15 @@ IDENTIFY FIRST: How many kW of heat? How many stages? 10kW, 15kW, 20kW are commo
   Each stage typically 5kW. A 10kW system has 2 stages, 20kW has 4.
 
 DIAGNOSTIC SEQUENCE (no heat on electric air handler or heat pump aux):
+0. DROPPED LEG — check this before anything else. #1 cause of no-heat on all-electric.
+   Measure L1–L2 (should be 220–240V), L1–N (~120V), L2–N (~120V).
+   Single dead leg → blower runs on 120V from good leg, strips produce zero heat. Looks like total failure.
 1. Verify W2 is energized at the air handler board (second stage call). If no W2 signal → thermostat or wiring issue, not the strips.
 2. Check sequencer: 24V signal in (from board) → bimetal heats up → contacts close (delay 30–90 sec) → line voltage to strip.
    Test sequencer: apply 24V to bimetal terminals, wait 60 sec, check continuity across line voltage contacts. Open contacts after 60 sec = failed sequencer.
+   Sequencer welded closed: contacts stuck shut → strips stay energized after call ends → limit trips on idle → unit won't heat next call.
 3. Check heat strip element: continuity across element terminals (power OFF). OL = burned-out element. Resistance should be low (3–10Ω depending on kW).
-4. High limit on heat strip: trips at 120–150°F (varies). Manual reset or auto-reset. Check for airflow restriction if limit is tripping.
+4. High limit on heat strip: trips at 120–150°F (varies). Manual reset or auto-reset. Find the airflow cause before resetting — never bypass a limit.
 5. Breaker: electric strips pull heavy amps. 10kW = ~42A at 240V. Weak breaker trips under load. Test with amp clamp while energized — compare to rated amps.
 
 Common failure pattern: one sequencer fails → half the heat strips don't energize → system heats slowly, struggles to keep up in cold weather → looks like refrigerant issue or undersized equipment.
@@ -923,8 +936,9 @@ Common complaints and causes:
   Cold air drafts → fresh air duct not tempered, damper stuck open when not calling.
 
 Diagnostic:
+  Filters: ERVs have 2–4 filters. Check first — dirty filters are the most common cause. Check every call.
   Core: remove and inspect. Clogged with dust = poor energy recovery. Clean with warm water, gentle soap.
-  Filters: ERVs have 2–4 filters. Dirty filters = motor overload, reduced airflow. Check every call.
+  ERV rotary wheel (ERV only, not HRV): verify wheel spins freely. Stopped wheel = unit acts as a plain exhaust fan with zero energy recovery, and can make humidity/comfort worse than having no unit. Check drive belt and motor before anything else on a "not recovering" complaint.
   Frost protection: in cold climates, ERV has defrost mode. If frost protection fails → core freezes → no ventilation.
   Controls: most have a simple timer or wall control. Verify it's set to the right ventilation rate (typically 0.35 ACH per code).
 
@@ -955,6 +969,8 @@ DIAGNOSTIC SEQUENCE:
 1. Error code: every tankless unit has a display. Code first, always. Brand apps available (Navien app, Rinnai app) for detailed fault history.
 2. Cold water sandwich: brief burst of cold water between hot slugs → multiple fixtures cycling OR set temp too close to incoming water temp. Not a failure.
 3. Minimum flow rate: tankless requires minimum flow to fire (typically 0.5 GPM). Partially closed fixture or pressure-balance valve → unit won't fire.
+   Cold water inlet screen (at the cold water inlet connection): mineral scale clogs it → low flow → unit won't fire. Pull and clean every call in hard water areas. Often resolves "won't ignite" with no error code.
+   Flow sensor: if unit shows zero response to hot water demand even with adequate flow → clean or replace flow sensor.
 4. Scale in heat exchanger: hard water areas → heat exchanger scales up → error codes for high temp or overheating. Flush with white vinegar or descaler annually.
 5. Gas supply: tankless pulls high BTU on demand (180,000–199,000 BTU). Undersized gas line = pressure drop = unit won't fire at full demand. Check inlet pressure under full load.
 6. Venting: condensing units use PVC. Same rules as 90%+ furnace — check for blockage, proper slope for condensate drainage.
