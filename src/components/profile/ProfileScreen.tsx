@@ -227,6 +227,25 @@ export default function ProfileScreen({ user, session, signOut }: ProfileScreenP
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [clearingCache, setClearingCache] = useState(false);
   const [confirmWipe, setConfirmWipe] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const handleManageSubscription = useCallback(async () => {
+    if (!user?.stripe_customer_id || portalLoading) return;
+    setPortalLoading(true);
+    try {
+      const res = await fetch("/api/stripe/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: user.stripe_customer_id }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch {
+      /* noop */
+    } finally {
+      setPortalLoading(false);
+    }
+  }, [user?.stripe_customer_id, portalLoading]);
 
   const handleSignOut = useCallback(async () => {
     await signOut();
@@ -487,11 +506,26 @@ export default function ProfileScreen({ user, session, signOut }: ProfileScreenP
         <SettingRow
           icon={CreditCard}
           label="Current Plan"
-          sub="FREE TIER &mdash; ACTIVE"
-          right={<NavChevron />}
+          sub={
+            user?.subscription_status === "active"   ? "SENIOR TECH PRO — $10/MO — ACTIVE" :
+            user?.subscription_status === "trialing" ? "SENIOR TECH PRO — TRIAL ACTIVE" :
+            user?.subscription_status === "past_due" ? "PAYMENT PAST DUE — UPDATE CARD" :
+            user?.subscription_status === "cancelled" ? "SUBSCRIPTION CANCELLED" :
+            "SENIOR TECH PRO — $10/MO"
+          }
         />
-        <Divider />
-        <SettingRow icon={CreditCard} label="Manage Subscription" right={<NavChevron />} />
+        {user?.stripe_customer_id && (
+          <>
+            <Divider />
+            <SettingRow
+              icon={CreditCard}
+              label={portalLoading ? "Opening Portal..." : "Manage Subscription"}
+              sub="Cancel, update card, view invoices"
+              onClick={handleManageSubscription}
+              right={<NavChevron />}
+            />
+          </>
+        )}
       </div>
 
       {/* ============================================================ */}

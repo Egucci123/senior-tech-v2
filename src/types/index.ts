@@ -21,6 +21,11 @@ export interface User {
   onboarding_completed_at: string;
   terms_version_accepted: string;
   email_verified_at: string;
+  // Stripe subscription
+  stripe_customer_id?: string;
+  subscription_status?: "active" | "inactive" | "past_due" | "cancelled" | "trialing";
+  subscription_id?: string;
+  subscription_current_period_end?: string;
 }
 
 // ── Chat Message ──

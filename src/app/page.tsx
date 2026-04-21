@@ -18,14 +18,21 @@ export default function MainApp() {
   const { manuals, hasNew, clearNew } = useManuals();
 
   useEffect(() => {
-    if (!loading && !session) {
+    if (loading) return;
+    if (!session) {
       router.replace("/onboarding");
+      return;
     }
     // Session exists but user profile missing — retry once then sign out
-    if (!loading && session && !user) {
+    if (session && !user) {
       refreshUser().catch(() => {
         signOut().then(() => router.replace("/onboarding"));
       });
+      return;
+    }
+    // User loaded — gate on subscription
+    if (user && user.subscription_status !== "active") {
+      router.replace("/subscribe");
     }
   }, [loading, session, user, router, refreshUser, signOut]);
 
@@ -35,7 +42,9 @@ export default function MainApp() {
     }
   }, [activeTab, hasNew, clearNew]);
 
-  if (loading || !session) {
+  const isSubscribed = user?.subscription_status === "active";
+
+  if (loading || !session || !user || !isSubscribed) {
     return (
       <div className="min-h-screen bg-[#0e0e0e] dot-grid flex flex-col items-center justify-center gap-4">
         <div className="w-16 h-16 clip-hex bg-surface-container-high flex items-center justify-center">
