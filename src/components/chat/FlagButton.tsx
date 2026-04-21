@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Flag, X, Check, ChevronDown } from "lucide-react";
-import { createCorrection } from "@/lib/supabase";
+import { Flag, X, Check } from "lucide-react";
 
 interface FlagButtonProps {
   messageContent: string;
@@ -33,40 +32,38 @@ export default function FlagButton({ messageContent, userId, sessionId, brand, m
     if (!category) return;
     setSaving(true);
     try {
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("timeout")), 5000)
-      );
-      await Promise.race([
-        createCorrection({
-          user_id: userId || "00000000-0000-0000-0000-000000000000",
-          session_id: sessionId,
-          brand,
-          model,
-          serial,
-          error_category: category,
-          correct_value: correction.trim() || undefined,
-          ai_response_excerpt: messageContent.slice(0, 500),
-        }),
-        timeoutPromise,
-      ]);
-      setSubmitted(true);
-      setTimeout(() => {
-        setOpen(false);
-        setSubmitted(false);
-        setCategory("");
-        setCorrection("");
-      }, 1500);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 6000);
+      try {
+        await fetch("/api/flag", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: userId || "00000000-0000-0000-0000-000000000000",
+            session_id: sessionId,
+            brand,
+            model,
+            serial,
+            error_category: category,
+            correct_value: correction.trim() || undefined,
+            ai_response_excerpt: messageContent.slice(0, 500),
+          }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
     } catch {
-      // Show success anyway — correction data is best-effort
-      setSubmitted(true);
-      setTimeout(() => {
-        setOpen(false);
-        setSubmitted(false);
-        setCategory("");
-        setCorrection("");
-      }, 1500);
+      // Best-effort — show success regardless
     } finally {
       setSaving(false);
+      setSubmitted(true);
+      setTimeout(() => {
+        setOpen(false);
+        setSubmitted(false);
+        setCategory("");
+        setCorrection("");
+      }, 1500);
     }
   }
 
