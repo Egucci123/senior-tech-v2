@@ -15,6 +15,7 @@ interface ManualsScreenProps {
 
 /** Score a manual entry — higher = better quality links (OEM PDF > ManualsLib page > search) */
 function scoreManual(m: ManualSearch): number {
+  if (!Array.isArray(m.manual_urls)) return 0;
   return m.manual_urls.reduce((score, u) => {
     if (u.source === 1) return score + 3;
     if (u.url.endsWith(".pdf") || u.url.includes(".pdf?") || u.url.includes("/pdf/")) return score + 3;

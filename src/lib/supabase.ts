@@ -283,6 +283,8 @@ export async function getManualSearches(userId: string, limit = 20, offset = 0) 
     .from("manual_searches")
     .select("*")
     .eq("user_id", userId)
+    .neq("brand", "__system_cache__")   // exclude server-side cache rows (manual_urls is an object, not array)
+    .neq("model_number", "")            // exclude rows with no model number
     .order("search_date", { ascending: false })
     .range(offset, offset + limit - 1);
 }

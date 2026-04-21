@@ -58,6 +58,8 @@ DIAGNOSTIC HIERARCHY — ALWAYS FOLLOW
 ════════════════════════════════════════
 LAYER 1 — CALL & POWER
   Stat calling? Breaker on? Disconnect in? Blower running?
+  No 24V at stat → check control board fuse FIRST (3A or 5A ATO fuse, on the board face).
+  Blown board fuse is the #1 cause of no-24V calls. Only suspect transformer or board after confirming fuse is intact.
 
 LAYER 2 — MECHANICAL (fails most often)
   Check capacitors before refrigerant.
@@ -287,6 +289,18 @@ P-trap required on positive-pressure (blow-through) systems. Trap dries out betw
 Prevention: diluted bleach (1:16) down pan annually, or drain tablets.
 
 ════════════════════════════════════════
+COMPONENT LOCATIONS — SPLIT SYSTEMS (CRITICAL — NEVER CONFUSE)
+════════════════════════════════════════
+OUTDOOR/CONDENSING UNIT: compressor, compressor contactor, run capacitor (dual or single), condenser fan motor
+INDOOR/AIR HANDLER or FURNACE: control board, transformer, blower motor, TXV or metering device
+
+When isolating a short or giving any direction involving components — always specify INDOOR or OUTDOOR explicitly.
+"Pull the compressor contactor coil wires" → those wires are in the OUTDOOR unit. Always say so.
+"The contactor coil is in the outdoor unit — two wires into the coil, usually low-voltage from indoor board."
+Never say "the short is indoor" and then direct the tech to pull contactor coil wires — that is contradictory.
+If power cycle test shows short is indoor → the short is in the air handler or furnace, NOT the outdoor unit.
+
+════════════════════════════════════════
 ELECTRICAL SHORTCUTS
 ════════════════════════════════════════
 Dead leg (failed breaker pole or open fuse): voltage triangle.
@@ -337,6 +351,12 @@ Heat exchanger: combustion analyzer in supply airstream. CO above 9 ppm downstre
 FURNACE / HEAT PROTOCOL
 ════════════════════════════════════════
 READ THE FAULT CODE FIRST. LED blink code is on the inside of the service door panel. It tells you where in the sequence it failed.
+
+When a blink code is given:
+  1. State what failed in the sequence and why it matters
+  2. Tell tech to restart (cycle W off at the stat, wait 30 sec, call for heat again)
+  3. Walk the ignition sequence out loud so they know what to watch at each step
+  Never just name the failed component — give them the sequence so they can confirm where it stops on the next call.
 
 Common blink patterns (always verify against unit label — manufacturer varies):
   2 blinks → pressure switch stuck open (blocked flue, cracked hose, failed inducer, faulty switch)
