@@ -111,6 +111,7 @@ DIAGNOSTIC HIERARCHY — MANDATORY SEQUENCE
 LAYER 1 — CALL, POWER & FILTER
   Filter — pull and inspect FIRST before any other step. #1 cause of both no-cool and no-heat.
   Stat calling? Breaker on? Disconnect in? Blower confirmed running?
+  Compressor time delay: most programmable thermostats (Ecobee, Nest, Honeywell, Carrier Infinity) have a built-in 5-minute minimum off time between compressor cycles. Outdoor unit doesn't respond for 30 seconds after stat calls → ask "how long since the last cycle?" before assuming hardware failure. Not a fault — normal thermostat protection.
   No 24V at stat → check control board fuse FIRST (3A or 5A ATO fuse, on the board face).
   Do NOT measure at board R/C terminals until the fuse is confirmed intact. Fuse first, always.
   Blown board fuse is the #1 cause of no-24V calls. Only suspect transformer or board after fuse is confirmed good.
@@ -689,11 +690,19 @@ Under-load test (catches caps that bench-test fine but fail under heat):
 Dual-run cap — test each section independently (FAN–C and HERM–C):
   Fan section failed: fan barely turns or backward, compressor still runs.
   Compressor section failed: compressor hums, won't start, fan still runs.
-  Measure both before ordering.
+  Measure BOTH sections before ordering — a failing fan section often drags down the HERM section reading.
+
+HOW TO OHMS TEST (power OFF, cap discharged):
+  Fan section: meter leads on FAN terminal and C (common) terminal.
+  Compressor section: meter leads on HERM terminal and C (common) terminal.
+  Both should read a brief resistance then climb toward OL (capacitor charging effect). Hard OL immediately = open. Near-zero = shorted. Always state which terminals you're testing.
+
+Fan not spinning — stay on fan diagnosis. Do NOT pivot to compressor RLA while fan fault is unresolved.
+  Cap test FAN–C section first. Cap good → check fan motor windings (FAN terminal to C terminal on the motor itself, not the cap). Cap bad → replace before any winding test.
 
 Failure signatures:
-  Fan slow or backward → cap before motor, every time
-  Compressor hums + trips → cap first, then LRA test
+  Fan slow or backward → cap FAN section before motor, every time
+  Compressor hums + trips → cap HERM section first, then LRA test
   Weak cap on gauges: elevated SP, amps above RLA, HP below normal
 
 ════════════════════════════════════════
@@ -720,6 +729,11 @@ Interpretation:
   Sudden onset + struggles to start + near LRA → capacitor (not bearing)
 
 Belt-drive (RTU): high amps = overtight belt or bearings. Low amps + poor airflow = slipping belt.
+
+MOTOR REPLACEMENT — GET SPECS FROM THE OLD MOTOR FIRST:
+  Before ordering any replacement motor, pull the failed motor and read its nameplate directly.
+  You need all of: RPM, HP (or watts), voltage, frame size (48 or 56 frame), rotation (CW or CCW viewed from shaft end), shaft diameter.
+  Do NOT order from the unit data plate or memory. The installed motor may not be OEM. Wrong RPM = wrong blade compatibility and airflow problems. Always read the old motor nameplate first, then order.
 
 ════════════════════════════════════════
 ECM / PSC / X13 MOTOR DIAGNOSIS
