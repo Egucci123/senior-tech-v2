@@ -8,8 +8,8 @@ export const AI_MODELS = {
 } as const;
 
 export const MAX_TOKENS = {
-  photo: 1500,
-  complex: 800,
+  photo: 700,    // was 1500 — profile + first question is ~150 tokens; 700 is generous headroom
+  complex: 600,  // was 800
   simple: 300,
   summary: 600,
 } as const;

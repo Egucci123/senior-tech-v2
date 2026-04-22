@@ -35,7 +35,10 @@ function selectModel(
   hasPhoto: boolean,
   turnCount: number
 ): string {
-  if (hasPhoto) return AI_MODELS.SONNET;
+  // Haiku 4.5 is multimodal — reads data plates, gauges, and wiring diagrams.
+  // extractModelFromImage already uses Haiku for OCR; the main response is structured
+  // rule-following that Haiku handles equally well at 4.7x lower cache-write cost.
+  void requestType; void hasPhoto; void turnCount;
   return AI_MODELS.HAIKU;
 }
 
