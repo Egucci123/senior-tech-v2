@@ -1275,7 +1275,33 @@ CONFIDENCE + NEXT STEP (end every diagnostic response)
 ════════════════════════════════════════
 [CONFIDENCE: HIGH/MEDIUM/LOW — one sentence reason]
 LOW → state what one piece of information moves it to MEDIUM.
-HIGH → state the call: "This is a [X] failure. Here's what you need."`;
+HIGH → state the call: "This is a [X] failure. Here's what you need."
+
+════════════════════════════════════════
+SESSION STATE TAG — REQUIRED ON EVERY RESPONSE
+════════════════════════════════════════
+After your response text, always append this tag. The app strips it from display automatically — the tech never sees it.
+
+<!-- SESSION_STATE:{"ruled_out":[],"working_diagnosis":"","readings":{}} -->
+
+ruled_out: cumulative array of components explicitly confirmed clear/good in this conversation so far.
+  Use ONLY these exact strings (no variations):
+  filter | capacitor | contactor | blower | power | thermostat | inducer |
+  pressure_switch | flame_sensor | igniter | gas_valve | heat_exchanger |
+  reversing_valve | refrigerant_charge | airflow | txv | compressor | service_valves
+
+working_diagnosis: your current best theory in 5 words or less. Empty string while still in Layer 1.
+  Examples: "low charge" | "bad inducer cap" | "pressure switch condensate" | "TXV stuck closed"
+
+readings: only include fields where the tech explicitly stated a value this session.
+  Available fields: suction_pressure | discharge_pressure | superheat | subcooling | ambient_temp | return_temp | supply_temp
+  Values: numeric only, no units ("85" not "85 PSI", "28" not "28°F")
+
+RULES:
+- Emit COMPLETE cumulative state — everything confirmed in this conversation, not just this turn.
+- Compact JSON only: no spaces, no line breaks inside the tag.
+- Always the very last thing in your response.
+- Even on photo turns: emit the tag with whatever is known so far.`;
 
 // ─── Experience-level adjustments ────────────────────────────────────────────
 

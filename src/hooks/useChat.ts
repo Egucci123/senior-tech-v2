@@ -424,6 +424,54 @@ export function useChat(user: User | null): UseChatReturn {
           }
         }
 
+        /* ── Extract SESSION_STATE tag and sync sessionState ────────────────────
+         * The AI emits cumulative ruled_out, working_diagnosis, and readings after
+         * every response. We parse it here and merge into sessionState so the
+         * server-side dynamicContext block always has up-to-date diagnostic facts.
+         * This is what allows the message history window to be safely trimmed —
+         * the context block carries the facts forward even when old turns are dropped.
+         */
+        const sessionStateMatch = assistantContent.match(
+          /<!-- SESSION_STATE:([\s\S]*?\}) -->/
+        );
+        if (sessionStateMatch) {
+          try {
+            const extracted = JSON.parse(sessionStateMatch[1]) as {
+              ruled_out?: string[];
+              working_diagnosis?: string;
+              readings?: Record<string, string>;
+            };
+            const cleanContent = assistantContent
+              .replace(/<!-- SESSION_STATE:[\s\S]*? -->/, "")
+              .trimEnd();
+            assistantContent = cleanContent;
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsg.id ? { ...m, content: cleanContent } : m
+              )
+            );
+
+            setSessionState((prev) => ({
+              ...prev,
+              // Union merge — once something is ruled out it stays ruled out
+              ruled_out:
+                extracted.ruled_out?.length
+                  ? [...new Set([...prev.ruled_out, ...extracted.ruled_out])]
+                  : prev.ruled_out,
+              // Replace — working diagnosis legitimately evolves each turn
+              working_diagnosis:
+                extracted.working_diagnosis ?? prev.working_diagnosis,
+              // Merge readings — keep old values if AI didn't re-emit them
+              readings: {
+                ...prev.readings,
+                ...(extracted.readings ?? {}),
+              },
+            }));
+          } catch (e) {
+            console.warn("[useChat] SESSION_STATE parse failed:", e);
+          }
+        }
+
         /* Clear photo pending state — streaming + tag extraction complete */
         setPendingPhotoMessageId(null);
 

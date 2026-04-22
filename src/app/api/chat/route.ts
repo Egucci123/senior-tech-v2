@@ -43,13 +43,16 @@ function selectModel(
 }
 
 /* ── Server-side message window ────────────────────────────────────────────────
- * CONSERVATIVE: keep 30 messages (15 pairs). sessionState only tracks equipment
- * and symptoms — it does NOT capture test results (cap MFD, contactor drop, etc.).
- * Trimming too aggressively would cause the AI to re-ask about already-tested
- * components. 30 messages covers all but the very longest sessions safely.
- * Tighten this once sessionState tracks measurements (ruled_out stays empty now).
+ * 16 messages (8 back-and-forth pairs). Safe because:
+ *   - AI emits SESSION_STATE tag every turn → ruled_out, working_diagnosis,
+ *     and readings are parsed client-side and flow back in dynamicContext
+ *   - dynamicContext block is always in the system prompt (uncached, always fresh)
+ *   - AI sees current equipment, symptoms, ruled_out, readings, working_diagnosis
+ *     even when earlier turns are trimmed
+ * Result: AI never loses key diagnostic facts; only raw conversation text is trimmed.
+ * Saves ~$0.06 per long session (25+ turns) in uncached input tokens.
  */
-const MESSAGE_WINDOW = 30; // 15 pairs — safe conservative trim
+const MESSAGE_WINDOW = 16; // 8 pairs — safe now that sessionState carries context
 
 /* ── Extend function timeout for photo analysis (requires Vercel Pro) ── */
 export const maxDuration = 60;
