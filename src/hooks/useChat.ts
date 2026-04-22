@@ -80,11 +80,10 @@ function resolveRequestType(
   turnCount: number
 ): RequestType {
   if (hasPhoto) return "photo";
-  // "complex" (600 tok) only for turns where a multi-step procedure might be needed.
-  // Early turns are always short (one question). Late turns are also short — by then
-  // the diagnostic is focused and one-question rule keeps responses tight.
-  // Only turns 6-12 might need a longer procedure explanation.
-  if (turnCount >= 6 && turnCount <= 12) return "complex";
+  // "complex" (600 tok) from turn 4 onward — a tech explaining a multi-step test
+  // (in-series µA measurement, 3-lead motor winding check, etc.) can easily hit
+  // 400+ tokens. Don't risk truncating a procedure explanation mid-step.
+  if (turnCount >= 4) return "complex";
   return "simple";
 }
 

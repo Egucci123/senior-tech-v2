@@ -42,13 +42,14 @@ function selectModel(
   return AI_MODELS.HAIKU;
 }
 
-/* ── Server-side message window — trim history to last N messages ──────────────
- * Client sends up to 40 messages. Beyond 8 pairs (16 messages), older turns add
- * uncached input cost with diminishing diagnostic value. sessionState dynamicContext
- * carries equipment, symptoms, ruled_out, and working_diagnosis forward so the AI
- * never loses the key facts — only the verbatim exchange is trimmed.
+/* ── Server-side message window ────────────────────────────────────────────────
+ * CONSERVATIVE: keep 30 messages (15 pairs). sessionState only tracks equipment
+ * and symptoms — it does NOT capture test results (cap MFD, contactor drop, etc.).
+ * Trimming too aggressively would cause the AI to re-ask about already-tested
+ * components. 30 messages covers all but the very longest sessions safely.
+ * Tighten this once sessionState tracks measurements (ruled_out stays empty now).
  */
-const MESSAGE_WINDOW = 16; // 8 back-and-forth pairs
+const MESSAGE_WINDOW = 30; // 15 pairs — safe conservative trim
 
 /* ── Extend function timeout for photo analysis (requires Vercel Pro) ── */
 export const maxDuration = 60;
