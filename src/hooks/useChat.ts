@@ -25,7 +25,9 @@ async function blobUrlToBase64(blobUrl: string): Promise<{ base64: string; media
       const objectUrl = URL.createObjectURL(blob);
       img.onload = () => {
         URL.revokeObjectURL(objectUrl);
-        const MAX = 1200;
+        // 1000px max: data plate text is fully readable, saves ~30% image tokens vs 1200px.
+        // 0.72 JPEG quality: imperceptible difference for printed text, smaller payload.
+        const MAX = 1000;
         let { width, height } = img;
         if (width > MAX || height > MAX) {
           if (width > height) {
@@ -42,7 +44,7 @@ async function blobUrlToBase64(blobUrl: string): Promise<{ base64: string; media
         const ctx = canvas.getContext("2d");
         if (!ctx) { resolve(null); return; }
         ctx.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.72);
         const base64 = dataUrl.split(",")[1];
         resolve({ base64, mediaType: "image/jpeg" });
       };
@@ -78,7 +80,11 @@ function resolveRequestType(
   turnCount: number
 ): RequestType {
   if (hasPhoto) return "photo";
-  if (turnCount >= 4) return "complex";
+  // "complex" (600 tok) only for turns where a multi-step procedure might be needed.
+  // Early turns are always short (one question). Late turns are also short — by then
+  // the diagnostic is focused and one-question rule keeps responses tight.
+  // Only turns 6-12 might need a longer procedure explanation.
+  if (turnCount >= 6 && turnCount <= 12) return "complex";
   return "simple";
 }
 

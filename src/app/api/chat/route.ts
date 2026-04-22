@@ -42,6 +42,14 @@ function selectModel(
   return AI_MODELS.HAIKU;
 }
 
+/* ── Server-side message window — trim history to last N messages ──────────────
+ * Client sends up to 40 messages. Beyond 8 pairs (16 messages), older turns add
+ * uncached input cost with diminishing diagnostic value. sessionState dynamicContext
+ * carries equipment, symptoms, ruled_out, and working_diagnosis forward so the AI
+ * never loses the key facts — only the verbatim exchange is trimmed.
+ */
+const MESSAGE_WINDOW = 16; // 8 back-and-forth pairs
+
 /* ── Extend function timeout for photo analysis (requires Vercel Pro) ── */
 export const maxDuration = 60;
 
@@ -91,6 +99,14 @@ export async function POST(request: NextRequest) {
   const maxTokens = MAX_TOKENS[requestType as keyof typeof MAX_TOKENS] ?? 500;
 
   /* ── Build dynamic system block — sanitize all sessionState fields ── */
+  const readings = sessionState?.readings;
+  const populatedReadings = readings
+    ? Object.entries(readings as Record<string, string>)
+        .filter(([, v]) => v && String(v).trim())
+        .map(([k, v]) => `${k.replace(/_/g, " ")}=${v}`)
+        .join(", ")
+    : "";
+
   const dynamicContext = [
     sessionState?.equipment?.brand &&
       `Equipment: ${sanitizeForPrompt(sessionState.equipment.brand)} ${sanitizeForPrompt(sessionState.equipment.model)} (${sanitizeForPrompt(sessionState.equipment.type)})`,
@@ -100,16 +116,25 @@ export async function POST(request: NextRequest) {
       `Ruled out: ${sanitizeForPrompt(sessionState.ruled_out.join(", "))}`,
     sessionState?.working_diagnosis &&
       `Working diagnosis: ${sanitizeForPrompt(sessionState.working_diagnosis)}`,
+    populatedReadings &&
+      `Gauge readings: ${sanitizeForPrompt(populatedReadings)}`,
     sessionState?.photos_received?.length &&
       `Photos received: ${sessionState.photos_received.length}`,
   ]
     .filter(Boolean)
     .join("\n");
 
+  /* ── Trim message history to MESSAGE_WINDOW to cap uncached input cost ──
+   * Old turns are expensive (uncached $0.80/MTok Haiku) and low-value past ~8 pairs.
+   * sessionState carries equipment/symptoms/readings context forward.
+   */
+  const trimmedMessages = (messages as unknown[]).slice(-MESSAGE_WINDOW);
+
   /* ── Construct Anthropic API messages ── */
-  const apiMessages = messages.map(
-    (m: { role: string; content: string; image_url?: string; image_base64?: string; image_media_type?: string }) => {
-      if (m.image_base64 && m.role === "user") {
+  const apiMessages = trimmedMessages.map(
+    (m: unknown) => {
+      const msg = m as { role: string; content: string; image_url?: string; image_base64?: string; image_media_type?: string };
+      if (msg.image_base64 && msg.role === "user") {
         return {
           role: "user",
           content: [
@@ -117,18 +142,18 @@ export async function POST(request: NextRequest) {
               type: "image",
               source: {
                 type: "base64",
-                media_type: m.image_media_type || "image/jpeg",
-                data: m.image_base64,
+                media_type: msg.image_media_type || "image/jpeg",
+                data: msg.image_base64,
               },
             },
             {
               type: "text",
-              text: m.content,
+              text: msg.content,
             },
           ],
         };
       }
-      return { role: m.role, content: m.content };
+      return { role: msg.role, content: msg.content };
     }
   );
 
@@ -142,23 +167,49 @@ export async function POST(request: NextRequest) {
   let noManualReason: string | null = null;
 
   if (hasPhoto && braveKey) {
-    // Hard 5-second deadline — Hobby plan times out at 10s total;
-    // if spec lookup runs long, abort it and let Claude respond from the image alone.
+    // Hard 3-second deadline — keeps p95 latency tight; cache hits return in <200ms,
+    // Brave searches usually complete in 1-2s. 3s catches nearly all; timeouts degrade
+    // gracefully (AI responds from image alone, no spec context injected).
     const specLookup = async () => {
-      const lastImgMsg = [...messages].reverse().find(
-        (m: { role: string; image_base64?: string }) => m.role === "user" && m.image_base64
-      );
-      if (!lastImgMsg?.image_base64) return;
+      /* ── Skip extractModelFromImage if equipment is already identified ──────────
+       * If a tech sends a second photo (gauge, wiring diagram) after the data plate
+       * was already read, we know brand+model from sessionState — no need to re-run
+       * a Haiku API call just to extract the same model number again.
+       */
+      const knownBrand = sessionState?.equipment?.brand as string | undefined;
+      const knownModel = sessionState?.equipment?.model as string | undefined;
 
-      const extracted = await extractModelFromImage(
-        lastImgMsg.image_base64,
-        lastImgMsg.image_media_type || "image/jpeg",
-        apiKey
-      );
-      if (!extracted?.brand || !extracted?.model) return;
+      let lookupBrand: string;
+      let lookupModel: string;
+      let lookupSerial: string | undefined;
+
+      if (knownBrand && knownModel) {
+        // Equipment already identified — skip Haiku extraction entirely
+        lookupBrand = knownBrand;
+        lookupModel = knownModel;
+        lookupSerial = sessionState?.equipment?.serial_number || undefined;
+        console.log(`[WEB LOOKUP] Using known equipment: ${lookupBrand} ${lookupModel}`);
+      } else {
+        // Need to extract from the image
+        const lastImgMsg = (trimmedMessages as { role: string; image_base64?: string; image_media_type?: string }[])
+          .slice()
+          .reverse()
+          .find((m) => m.role === "user" && m.image_base64);
+        if (!lastImgMsg?.image_base64) return;
+
+        const extracted = await extractModelFromImage(
+          lastImgMsg.image_base64,
+          lastImgMsg.image_media_type || "image/jpeg",
+          apiKey
+        );
+        if (!extracted?.brand || !extracted?.model) return;
+        lookupBrand = extracted.brand;
+        lookupModel = extracted.model;
+        lookupSerial = extracted.serial;
+      }
 
       // v5 suffix: busts cached results that included OEM PDFs; v5 = ManualsLib-only, no cache on source-3 fallback
-      const cacheKey = `${extracted.brand}__${extracted.model}__v5`.toLowerCase().replace(/\s+/g, "_");
+      const cacheKey = `${lookupBrand}__${lookupModel}__v5`.toLowerCase().replace(/\s+/g, "_");
 
       // 7-day TTL: ignore stale cache entries
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -178,8 +229,8 @@ export async function POST(request: NextRequest) {
         webSpecsContext = parsed.specsContext;
         webManualUrls = parsed.manualUrls;
       } else {
-        console.log(`[WEB LOOKUP] Fetching: ${extracted.brand} ${extracted.model}`);
-        const result = await fetchBraveSpecs(extracted.brand, extracted.model, extracted.serial);
+        console.log(`[WEB LOOKUP] Fetching: ${lookupBrand} ${lookupModel}`);
+        const result = await fetchBraveSpecs(lookupBrand, lookupModel, lookupSerial);
         if (result) {
           webSpecsContext = result.specsContext;
           webManualUrls = result.manualUrls;
@@ -202,22 +253,34 @@ export async function POST(request: NextRequest) {
 
     const timeout = new Promise<void>((resolve) =>
       setTimeout(() => {
-        console.warn("[api/chat] Spec lookup timed out (5s) — proceeding without pre-fetched specs");
+        console.warn("[api/chat] Spec lookup timed out (3s) — proceeding without pre-fetched specs");
         resolve();
-      }, 5000)
+      }, 3000)
     );
 
     await Promise.race([specLookup(), timeout]);
   }
 
-  /* ── System prompt with cache_control ── */
+  /* ── System prompt with cache_control ─────────────────────────────────────────
+   * Two cache breakpoints:
+   *   1. STATIC_SYSTEM_PROMPT  — never changes, cheapest to cache (~21k tokens)
+   *   2. webSpecsContext       — per-model specs, stable within a session once fetched
+   * The dynamic block (name + experience + session context) changes every turn,
+   * so it intentionally has NO cache_control — caching a moving block wastes a write.
+   */
   const systemBlocks = [
     {
       type: "text",
       text: STATIC_SYSTEM_PROMPT,
       cache_control: { type: "ephemeral" },
     },
-    ...(webSpecsContext ? [{ type: "text", text: webSpecsContext }] : []),
+    ...(webSpecsContext
+      ? [{
+          type: "text",
+          text: webSpecsContext,
+          cache_control: { type: "ephemeral" },  // cache specs — stable for this session
+        }]
+      : []),
     {
       type: "text",
       text: getDynamicSystemPrompt(firstName, experienceLevel) +
@@ -259,7 +322,7 @@ export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      // Inject manual URLs as machine-readable tag before Sonnet text
+      // Inject manual URLs as machine-readable tag before Haiku text
       if (webManualUrls.length > 0) {
         controller.enqueue(
           encoder.encode(`<!-- BRAVE_MANUALS:${JSON.stringify(webManualUrls)} -->\n`)
@@ -280,7 +343,16 @@ export async function POST(request: NextRequest) {
 
       const decoder = new TextDecoder();
       let buffer = "";
-      let inputTokens = 0;
+
+      /* ── Token tracking — three separate buckets from Anthropic ──────────────
+       * input_tokens        = uncached input   — charged at full rate ($0.80/MTok Haiku)
+       * cache_creation_tokens = cache write    — charged at 1.25x  ($1.00/MTok Haiku)
+       * cache_read_tokens   = cache hit        — charged at 0.1x   ($0.08/MTok Haiku)
+       * Logging total = sum of all three for DB; cost uses real rates for each bucket.
+       */
+      let regularInputTokens = 0;
+      let cacheWriteTokens = 0;
+      let cacheReadTokens = 0;
       let outputTokens = 0;
 
       try {
@@ -307,9 +379,12 @@ export async function POST(request: NextRequest) {
                 controller.enqueue(encoder.encode(event.delta.text));
               }
 
-              /* Track usage */
+              /* Capture all three token buckets from message_start */
               if (event.type === "message_start" && event.message?.usage) {
-                inputTokens = event.message.usage.input_tokens ?? 0;
+                const u = event.message.usage;
+                regularInputTokens  = u.input_tokens                  ?? 0;
+                cacheWriteTokens    = u.cache_creation_input_tokens    ?? 0;
+                cacheReadTokens     = u.cache_read_input_tokens        ?? 0;
               }
               if (event.type === "message_delta" && event.usage) {
                 outputTokens = event.usage.output_tokens ?? 0;
@@ -322,15 +397,18 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         console.error("Stream processing error:", err);
       } finally {
-        /* Log usage to Supabase + console */
-        if (inputTokens || outputTokens) {
-          const costEstimate =
-            model === AI_MODELS.SONNET
-              ? inputTokens * 0.000003 + outputTokens * 0.000015
-              : inputTokens * 0.0000008 + outputTokens * 0.000004;
+        /* Log usage to Supabase + console — use real rates for each token bucket */
+        const totalInputTokens = regularInputTokens + cacheWriteTokens + cacheReadTokens;
+        if (totalInputTokens || outputTokens) {
+          // Haiku 4.5 rates: input $0.80, cache write $1.00, cache read $0.08, output $4.00 (per MTok)
+          // Sonnet 4.5 rates: input $3.00, cache write $3.75, cache read $0.30, output $15.00 (per MTok)
+          const isSonnet = model === AI_MODELS.SONNET;
+          const costEstimate = isSonnet
+            ? regularInputTokens * 0.000003    + cacheWriteTokens * 0.00000375  + cacheReadTokens * 0.0000003   + outputTokens * 0.000015
+            : regularInputTokens * 0.0000008   + cacheWriteTokens * 0.000001    + cacheReadTokens * 0.00000008  + outputTokens * 0.000004;
 
           console.log(
-            `[USAGE] model=${model} input=${inputTokens} output=${outputTokens} cost=$${costEstimate.toFixed(5)} type=${requestType}`
+            `[USAGE] model=${model} in=${regularInputTokens} cacheWrite=${cacheWriteTokens} cacheRead=${cacheReadTokens} out=${outputTokens} cost=$${costEstimate.toFixed(5)} type=${requestType} historyMsgs=${trimmedMessages.length}`
           );
 
           /* Fire-and-forget DB write */
@@ -339,7 +417,7 @@ export async function POST(request: NextRequest) {
               user_id: userId,
               date: new Date().toISOString().split("T")[0],
               model_used: model,
-              input_tokens: inputTokens,
+              input_tokens: totalInputTokens,
               output_tokens: outputTokens,
               estimated_cost: costEstimate,
               request_type: requestType,
