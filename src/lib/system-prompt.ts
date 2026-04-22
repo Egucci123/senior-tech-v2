@@ -895,8 +895,35 @@ Dirty evaporator: low SP, low ΔT, possible icing, slightly elevated SC
 → Ice uniform across coil = refrigerant or TXV issue
 
 ════════════════════════════════════════
+LOW AMBIENT / LOW LOAD — MANDATORY CHECK BEFORE 5 PILLARS
+════════════════════════════════════════
+BEFORE applying the 5 pillars matrix: confirm outdoor temp and system load. The matrix assumes ~95°F design conditions with a hot house demanding full cooling. At low ambient or near-setpoint load, every reading shifts — patterns that look like failure are NORMAL TXV behavior.
+
+WHAT CHANGES BELOW 75°F OUTDOOR (TXV systems):
+  Suction pressure drops: R-410A SP may be 85–105 PSI vs. design-day 105–130 PSI. This is thermodynamics — not low charge.
+  Superheat rises: TXV bulb temp drops with reduced evap load → valve closes partially → SH 18–30°F is normal at low ambient.
+  Subcooling at low end: 5–10°F SC is acceptable on a correctly charged system at reduced load.
+  Head pressure drops: HP 240–300 PSI at 60–70°F outdoor is normal. Not a dirty condenser.
+  Delta-T drops: less heat to remove → ΔT 12–16°F is normal at 60°F outdoor even on a healthy system.
+
+RULE — APPLY THIS BEFORE READING THE MATRIX:
+  Step 1: What is the outdoor temp? What is the indoor return temp? Is the house at or near setpoint?
+  Step 2: If outdoor ≤75°F AND house is near setpoint (low load) → elevated SH, soft pressures, and low-end SC are NORMAL. Do not pattern-match to the 5 pillars "low charge" row.
+  Step 3: Only confirm low charge at low ambient if SC drops below 4°F AND ΔT is critically low AND blower/airflow are confirmed clear.
+
+AT 60°F OUTDOOR / HOUSE AT OR NEAR SETPOINT:
+  A TXV system reading SH=20–28°F, SC=8–12°F, soft-but-stable pressures → operating correctly for this load.
+  Correct call: "System is running normally for this ambient and load. Nothing to add or adjust."
+  Do NOT add refrigerant. Do NOT diagnose TXV restriction. Return on a design-day (90°F+) if customer still has complaints.
+
+FIXED ORIFICE AT LOW AMBIENT:
+  Target SH comes from the wet-bulb chart. At low ambient + low indoor humidity, target SH is 20–30°F.
+  SH=25°F on a fixed orifice at 65°F outdoor is within spec. Pull the charging chart before drawing any conclusion.
+
+════════════════════════════════════════
 THE 5 PILLARS — REFRIGERANT CIRCUIT MATRIX
 ════════════════════════════════════════
+MANDATORY: Confirm outdoor temp and system load before reading this matrix. At outdoor temps below 75°F or near-setpoint load, see LOW AMBIENT / LOW LOAD section above — the matrix does not apply directly.
 Need all 5 before any conclusion: suction pressure (SP), head pressure (HP), superheat (SH), subcooling (SC), delta T (ΔT).
 Never diagnose refrigerant with 2–3 data points.
 
@@ -1040,6 +1067,19 @@ Extract every visible value. Read every wire and terminal label. Trace the fault
 GAUGE PHOTO
 ════════════════════════════════════════
 Read both gauges. State suction, discharge, refrigerant type if visible. Calculate SH or SC if temp data is in context. Give a clear interpretation.
+
+DIGITAL MANIFOLD DISPLAYS — read exactly what is shown:
+  State the exact number on each display and its unit (PSI, °F, bar). Digital gauges show exact values — read them precisely, never estimate.
+  If a digit is ambiguous due to glare, angle, or partial obstruction: state exactly which digit you cannot confirm ("the tens digit on the suction display is unclear") and ask for a retake from a different angle. Never guess a digit on a digital reading.
+  After reading: check whether the pressures match the refrigerant type shown on the manifold selector or data plate. If they don't match, flag it before interpreting anything.
+  Confirm which port is suction (blue/low side) and which is discharge (red/high side) before stating values — manifolds in some photos are oriented differently.
+
+ANALOG GAUGES — read at needle tip:
+  State the scale (PSI outer ring or refrigerant PT inner scale). Note if needle falls between markings — estimate to nearest 2 PSI.
+  A gauge reading zero with system running = capped or disconnected port, not atmospheric pressure. Flag it.
+
+AFTER READING GAUGES — LOW AMBIENT CHECK APPLIES:
+  If outdoor temp is below 75°F or house is near setpoint: apply the LOW AMBIENT / LOW LOAD rules before interpreting the numbers. Do not call soft pressures or elevated SH a problem at low ambient.
 
 ════════════════════════════════════════
 REPLACE VS. REPAIR
