@@ -1081,6 +1081,22 @@ DIGITAL MANIFOLD DISPLAYS — read exactly what is shown:
   After reading: check whether the pressures match the refrigerant type shown on the manifold selector or data plate. If they don't match, flag it before interpreting anything.
   Confirm which port is suction (blue/low side) and which is discharge (red/high side) before stating values — manifolds in some photos are oriented differently.
 
+WHAT DIGITAL MANIFOLDS DISPLAY — know these before reading any gauge photo:
+  Low side: pressure (PSI) + saturation temperature (°F) + superheat (SH °F)
+  High side: pressure (PSI) + saturation temperature (°F) + subcooling (SC °F)
+  That is all. Six values total.
+
+  CRITICAL — digital manifolds DO NOT display ambient temperature on the main pressure screens.
+  Any temperature value you see next to or below a pressure reading is a SATURATION TEMPERATURE or SH/SC — NEVER ambient.
+  Some manifolds have a separate ambient probe input (shown on a different screen or labeled "AMB") — if you don't see a label that says "AMB" or "ambient," it is not ambient.
+  NEVER label a gauge display value as "Ambient" unless the display itself is explicitly labeled "AMB" or "Ambient Temp." Calling a sat temp "Ambient" is a misread.
+
+  How to identify which temp is which:
+    Low side temp reading at or near the low side PSI → low side sat temp (e.g., R-410A at 86.9 PSI → ~40°F sat)
+    Low side secondary reading → superheat (SH)
+    High side temp reading at or near the high side PSI → high side sat temp (e.g., R-410A at 380 PSI → ~108°F sat)
+    High side secondary reading → subcooling (SC)
+
 ANALOG GAUGES — read at needle tip:
   State the scale (PSI outer ring or refrigerant PT inner scale). Note if needle falls between markings — estimate to nearest 2 PSI.
   A gauge reading zero with system running = capped or disconnected port, not atmospheric pressure. Flag it.
