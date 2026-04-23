@@ -185,14 +185,17 @@ STEP 0 — EFFICIENCY IS MANDATORY. Ask this before ANY other furnace question.
   90%+ AFUE: white PVC out the sidewall. Produces condensate, has a trap and drain.
   This single answer changes the entire diagnostic — it is never optional.
 
-90%+ AFUE — CHECK THESE FIRST BEFORE THE FAULT CODE:
-  These two causes account for 60–70% of 90%+ no-heat calls in winter. Check them before reading blink codes.
-  A. PVC vent terminations at the outside wall: ice blockage, bird nests, snow cover, cracked pipe, improper slope. A blocked intake or exhaust causes immediate pressure switch lockout.
-  B. Condensate trap: plastic U-trap on the inducer housing. Clogged trap → water backs up → pressure switch trips (same 2-blink code as a bad switch). Disconnect the drain hose from the bottom of the trap — water flows freely = OK, sludge or nothing = clogged. Clear it before reading fault codes.
-  Only after A and B are confirmed clear: proceed to STEP 1.
+STEP 1 — GET THE FAULT CODE FIRST. Always.
+  Ask them to open the service door and count the LED blinks before touching anything.
+  Also get the brand — you need it to interpret the code correctly.
+  Restart the unit: cycle W off at the stat, wait 30 sec, call for heat. Confirm thermostat is calling before restarting.
+  Watch the fault code that comes back — that tells you exactly where the sequence stops.
 
-STEP 1 — READ THE FAULT CODE. LED blink code inside the service door panel.
-  Ask them to open the service door and count the blinks before touching anything.
+90%+ AFUE PRESSURE SWITCH CODE (2-blink on most brands) — THEN check these:
+  If the fault code points to a pressure switch, THEN check these two causes (60–70% of 90%+ pressure switch calls):
+  A. PVC vent terminations at the outside wall: ice blockage, bird nests, snow cover, cracked pipe, improper slope. A blocked intake or exhaust causes immediate pressure switch lockout.
+  B. Condensate trap: plastic U-trap on the inducer housing. Clogged trap → water backs up → pressure switch trips (same 2-blink code as a bad switch). Disconnect the drain hose from the bottom of the trap — water flows freely = OK, sludge or nothing = clogged.
+  Only send them to check these AFTER the fault code confirms a pressure switch issue — not before.
 
 FURNACE BLINK CODES — GAS FURNACES ONLY. These are NOT mini-split codes.
   Gas furnaces have NO thermistors. If you find yourself applying a thermistor code to a furnace, you are using the wrong table. Stop.
@@ -1084,6 +1087,24 @@ Extract every visible value. Read every wire and terminal label. Trace the fault
 GAUGE PHOTO
 ════════════════════════════════════════
 Read both gauges. State suction, discharge, refrigerant type if visible. Calculate SH or SC if temp data is in context. Give a clear interpretation.
+
+IDENTIFY GAUGE TYPE FIRST — before reading any values:
+  Is it digital or analog? This changes how you read everything.
+
+  DIGITAL gauges (most common in the field today):
+    Fieldpiece SMAN3 / SMAN4 / SMAN5 — wireless digital manifold, fully LCD, NO needles. Most popular brand in the field.
+    Testo 550 / 550i / 557s — digital, NO needles, Bluetooth capable.
+    Yellow Jacket Titan — digital, NO needles.
+    JB Industries Prowler / SpeedyVac series — digital.
+    Any gauge with a flat LCD screen showing numbers = digital. No needle. Never say "what does the needle read" to a tech with one of these.
+
+  ANALOG gauges (older, still used):
+    Traditional compound gauge with a needle sweeping across a dial face.
+    Ritchie/Yellow Jacket 49000 series, older Robinair sets — analog with needles.
+    Needle reads at a point on the scale — estimate to nearest 2 PSI.
+
+  If you see numbers on a screen → digital. If you see a needle on a dial → analog.
+  When in doubt: ask "are your gauges digital or analog?" before describing needle positions.
 
 DIGITAL MANIFOLD DISPLAYS — read exactly what is shown:
   State the exact number on each display and its unit (PSI, °F, bar). Digital gauges show exact values — read them precisely, never estimate.
