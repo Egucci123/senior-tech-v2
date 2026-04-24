@@ -35,11 +35,13 @@ function selectModel(
   hasPhoto: boolean,
   turnCount: number
 ): string {
-  void requestType; void hasPhoto; void turnCount;
-  // Sonnet for everything. Haiku doesn't have the HVAC field knowledge depth needed —
-  // TR-TW, boiler controls, field terminology — Sonnet knows it, Haiku needs it in the prompt.
-  // Prompt stuffed with knowledge to compensate for Haiku is worse than just using Sonnet.
-  return AI_MODELS.SONNET;
+  // Sonnet: photos (vision quality) + first 2 turns (system ID, context-setting).
+  // Haiku: all subsequent text turns — it knows HVAC terminology fine with a clean prompt.
+  // The previous 28k-token prompt was creating noise that made Haiku look dumber than it is.
+  // A short behavior-focused prompt + Haiku is ~3.7x cheaper with comparable quality.
+  if (hasPhoto || requestType === "photo") return AI_MODELS.SONNET;
+  if (turnCount <= 1) return AI_MODELS.SONNET; // first exchange sets all context
+  return AI_MODELS.HAIKU;
 }
 
 /* ── Server-side message window ────────────────────────────────────────────────
