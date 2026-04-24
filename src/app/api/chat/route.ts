@@ -35,11 +35,11 @@ function selectModel(
   hasPhoto: boolean,
   turnCount: number
 ): string {
-  void turnCount;
-  // Photo turns use Sonnet — component identification (aquastats, boards, valves, gauges)
-  // requires Sonnet-level vision. Haiku is sufficient for all text-only diagnostic turns.
-  if (hasPhoto || requestType === "photo") return AI_MODELS.SONNET;
-  return AI_MODELS.HAIKU;
+  void requestType; void hasPhoto; void turnCount;
+  // Sonnet for everything. Haiku doesn't have the HVAC field knowledge depth needed —
+  // TR-TW, boiler controls, field terminology — Sonnet knows it, Haiku needs it in the prompt.
+  // Prompt stuffed with knowledge to compensate for Haiku is worse than just using Sonnet.
+  return AI_MODELS.SONNET;
 }
 
 /* ── Server-side message window ────────────────────────────────────────────────

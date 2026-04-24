@@ -494,7 +494,6 @@ AQUASTAT — know this component cold. It is the brain of a hot water boiler.
     Lower dial = low limit setpoint (if present).
     Differential = how far temp drops before burner re-fires (usually fixed at 10–25°F).
     Terminals: TT (thermostat/zone call), R (24V hot), C (common), Cir (circulator).
-  TR and TW = thermostat circuit terminals on boiler controls (Honeywell, Beckett, IFC, etc.). These are the 24V call terminals — same function as TT. No 24V between TR and TW = thermostat or control circuit is not completing the call. This is NOT the gas valve circuit. Never call TR-TW "gas valve coil."
 
   Aquastat diagnosis:
     No heat, boiler never fires → jumper TT terminals on aquastat. Burner fires = zone/thermostat issue, not aquastat.
