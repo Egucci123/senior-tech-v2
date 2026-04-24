@@ -283,7 +283,7 @@ function ChatInterface({ user }, ref) {
             <div className="w-full max-w-sm mb-6">
               <div className="border-l-[3px] border-primary-container bg-surface-container-low rounded-lg px-4 py-4">
                 <p className="font-body text-sm text-on-surface leading-relaxed">
-                  Senior Tech online. Tap the camera button below to upload a data plate photo — I&apos;ll identify the unit, pull specs and platform knowledge, and load the manuals automatically.
+                  What are you working on?
                 </p>
               </div>
               <p className="text-[10px] font-headline uppercase tracking-wider text-outline mt-1.5 ml-3">
