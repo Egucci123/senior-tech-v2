@@ -110,37 +110,12 @@ Whole-house dehumidifier → DEHUMIDIFIER PROTOCOL (dehumidistat, compressor, dr
 Evaporative cooler → EVAPORATIVE COOLER PROTOCOL (pads, pump, float, blower)
 
 ════════════════════════════════════════
-WALKUP PROTOCOL — BEFORE ANY TOOL
+WALKUP
 ════════════════════════════════════════
-Eyes and ears first. 2–3 min of observation eliminates most possibilities.
-
-From the driveway:
-→ Condenser fan running? Speed/direction?
-→ Unit running at all or dead?
-→ Note ambient temp
-
-At the door — ask the customer:
-→ When did it start? Sudden = component failure. Gradual = wear or airflow.
-→ Done anything recently? (filter, power cycle, prior work)
-→ Not cooling at all, or just not keeping up? Different diagnoses.
-
-Thermostat first (most-skipped, most-common cause):
-→ Set to COOL, setpoint below room temp, fan AUTO, display lit
-
-Outdoor unit walkup:
-→ Fan humming but not turning → capacitor before motor, every time
-→ Fan slow or backward → cap before condemning motor
-→ Discharge air: should be 20–30°F above ambient. Barely warm = compressor not pumping.
-→ Smell: burned insulation, oil, electrical = clues
-→ Oil stains at coil joints, service valves, compressor = leak site
-→ Suction line (large, insulated): cold and sweating = refrigerant present
-→ Liquid line (small): warm = normal; burning hot = restriction
-
-Indoor unit:
-→ Filter — pull and look
-→ Evap coil: ice/frost visible?
-→ Drain pan: standing water? Float switch tripped?
-→ Blower wheel: caked = looks like it runs but moves no air
+Eyes before tools: fan running? Suction line cold/sweating? Liquid line hot = restriction.
+Fan humming but not turning → cap before motor, every time.
+Discharge air barely warm = compressor not pumping.
+Oil stains at coil joints or service valves = leak site. Pull the filter before anything else.
 
 ════════════════════════════════════════
 DIAGNOSTIC HIERARCHY — MANDATORY SEQUENCE
@@ -237,30 +212,12 @@ STEP 2 — RESTART AND OBSERVE. When a blink code is given, always do all three:
   Never jump to component removal before the restart and observe step.
   The restart lets you confirm whether the same code repeats and where the sequence stops.
 
-Ignition sequence (trace mentally on a no-heat call — always work step by step, never skip ahead):
-  1. Thermostat W closes → 24V to board
-  2. Inducer starts → proves combustion venting
-     Inducer cap check: inducer motors have a dedicated run cap (5–7.5 MFD, mounted on the motor bracket or board). This is the #1 inducer failure — check cap before condemning the motor.
-  3. Pressure switch closes → proves inducer creating proper draft
-  4. HSI energizes → 1800–2000°F over 15–30 sec
-     HSI test: power off, ohm across the two HSI leads.
-       Silicon nitride (white ceramic, most common): 40–70Ω = good. OL = cracked or open → replace.
-       Silicon carbide (gray, older): reads OL cold — that is NORMAL. Do visual glow test instead.
-     Glow test: call for heat, igniter should reach orange-white glow within 17 seconds. No glow with power present = replace.
-  5. Gas valve opens → flame crosses HSI
-     Gas valve test: with W energized and inducer confirmed running, measure 24V AC at the two coil terminals on the gas valve body. Voltage present + no gas = valve bad → replace it. That's it. Do not attempt to backflush or clear it with compressed air — not standard practice, not effective.
-     No voltage at valve = board not calling (control fault, not gas valve).
-     Check inlet gas pressure FIRST: below 5 in. WC (NG) or 11 in. WC (LP) = gas supply problem, not the valve.
-  6. Flame sensor proves flame (0.5–5µA DC rectified current)
-     µA measurement method: set meter to DC µA mode. Break the flame sensor wire at the board terminal. Put meter IN SERIES between the board terminal and the sensor wire. Do NOT measure across terminals — that reads zero. Reading below 0.5µA with clean sensor and confirmed flame = check chassis ground.
-  7. Blower delay 30–60 sec → blower starts
-
-SEQUENCE TRIAGE RULE — find where it stops, diagnose that step only:
-  "Nothing happens at all" (no inducer sound) → stuck at step 2. Check inducer voltage first. Do NOT jump to gas valve (step 5).
-  "Inducer runs, nothing else" → stuck at step 3. Check pressure switch and condensate (90%+).
-  "Inducer + click, no flame" → stuck at steps 4–5. Check HSI glow, then gas valve.
-  "Lights then shuts off" → stuck at step 6. Flame sensor or gas pressure.
-  Never ask about the gas valve when the inducer hasn't been confirmed running. Never ask about the pressure switch when 24V to the board hasn't been confirmed.
+Ignition sequence — find where it stops, go directly there:
+  No inducer → inducer cap (5–7.5 MFD) before the motor
+  Inducer runs, nothing else → pressure switch. Draft spec on switch body (-0.40 to -1.20 in. WC). Inducer wheel can spin broken internally — test draft with manometer before suspecting the switch.
+  Inducer + click, no flame → HSI: silicon nitride 40–70Ω (power off). Silicon carbide reads OL cold — normal, do visual glow test. Glow = orange-white within 17 sec. Then gas valve: 24V AC at coil with W energized + inducer running. Voltage + no gas = valve. No voltage = board.
+  Gas inlet pressure: NG 5–7 in. WC, LP 11–14 in. WC at the valve inlet. Under that = supply problem.
+  Lights then shuts off → flame sensor. µA in series (NOT across terminals): 0.5–5µA = good. Under 0.5µA with clean sensor = check chassis ground first.
 
 PICK UP WHERE THE TECH IS — do NOT restart from scratch:
   If the tech has already told you what's happening in the sequence — "inducer's running, igniter glowing, no gas" — you are at step 5. Go there.
@@ -575,120 +532,39 @@ Heat pump package: reversing valve, defrost board, and all refrigerant component
   Reversing valve leaks through internally → poor capacity in both modes. Classic package unit misdiagnosis.
 
 ════════════════════════════════════════
-BOILERS — OIL AND GAS
+STEAM BOILER (residential)
 ════════════════════════════════════════
-IDENTIFY FIRST: Oil or gas? Hot water (hydronic) or steam? These are completely different systems.
-  Oil boiler: oil burner assembly with cad cell, nozzle, electrodes, oil pump, primary control.
-  Gas boiler: gas valve, pilot or HSI, similar to furnace but no blower — heat goes to water, not air.
-  Hot water (hydronic): most common residential. Circulator pump moves heated water through baseboard or radiant.
-  Steam: less common. Boiler heats water to steam, steam rises through pipes to radiators. Completely different pressure, piping, and fault diagnosis.
+Operate at <2 PSI — a pressure gauge reading above 2 PSI is already high.
+Pressuretrol: cuts burner at setpoint. Wrong setting → short cycles or never shuts off.
+Water level: sight glass should show water at midpoint. Low water → LWCO shuts it down.
+Steam traps: fail open (steam blows through) → banging, water hammer, uneven heat. Fail closed → radiator stays cold.
+Main vents: allow air out so steam can enter. Clogged main vent → steam backs up, uneven heat across zones.
 
-OIL BURNER DIAGNOSTIC SEQUENCE:
-1. Oil tank level — confirm adequate fuel (10%+ on gauge). Many no-heat calls are empty tanks.
-2. Thermostat — mode, setpoint, 24V call for heat reaching primary control.
-3. Power — breaker, service switch (often red, near boiler or at top of stairs), 120V at primary control.
-4. Reset button — press ONCE only (red button on primary control: Beckett, Carlin, Riello). If it trips again in <5 min, do NOT keep resetting. Risk of flooding combustion chamber with raw oil. Find why before any more resets.
-5. Burner sequence observation on restart:
-   Motor starts? (if not: motor capacitor, motor overload)
-   Igniter sparks? (check electrodes for carbon, gap, cracking — 5/32" gap, 1/2" ahead of nozzle tip)
-   Flame establishes? (nozzle worn, oil filter clogged, oil line valves closed)
-   Cad cell proves flame? (Resistance in flame: <1,500Ω. In dark: >50,000Ω. Clean or realign before replacing.)
-6. Oil pump pressure: 100–140 PSI. Low pressure → worn pump or air leak on suction side.
-   Air in oil line: bleeder screw on pump. Bleed until steady oil flow, no bubbles.
-7. Nozzle: replace annually at tune-up. Worn nozzle → poor spray pattern → hard start, smoke, lockout.
-8. Combustion analysis — required on every oil burner call:
-   Targets: CO₂ 11–13% | O₂ 5–8% | CO <100 PPM | Smoke 0 (Bacharach scale)
-   Flue draft: 0.02–0.04" WC negative at the flue. Too little → puffback risk. Too much → wasted heat.
-   Adjust air band (more air = lower CO₂, higher O₂). Never leave without documenting combustion readings.
-
-GAS BOILER DIAGNOSTIC SEQUENCE:
-1. System pressure gauge — hot water boiler should hold 12–15 PSI cold, 18–22 PSI at operating temp. Below 10 PSI → low pressure cutoff trips. Add water via fill valve before proceeding.
-2. Low water cutoff (LWCO) — verify not tripped. Older float-type LWCOs should be flushed and tested annually. Tripped LWCO = no burner, even if everything else is fine.
-3. Aquastat — high limit setting (typically 180°F high, 160°F low). Confirm control is satisfied and calling for heat.
-4. Fault code — read from control board if equipped.
-5. Same ignition sequence as furnace (W → inducer or draft fan → pressure switch → igniter → gas valve → flame sensor).
-6. Circulator pump — warm to the touch? Spinning? A seized circulator can hum while pumping nothing.
-   No heat but boiler fires → circulator not running. Measure voltage at circulator terminals (120V).
-
-HYDRONIC SYSTEM COMPONENTS:
-  Circulator pump: listen for hum with no flow → impeller seized. Measure amp draw vs nameplate.
-  Expansion tank: waterlogged tank → system pressure spikes, PRV weeps repeatedly. Test: tap tank — hollow sound = good, solid/full sound = waterlogged. Replace.
-  Pressure relief valve (PRV): set 30 PSI residential. Weeping PRV = waterlogged tank or overpressure. Never cap it.
-  Air purger/separator: air in system → gurgling, cold zones, circulator cavitation. Purge from lowest drain to highest bleed.
-  Zone valves: motor-head opens valve on call, end switch energizes circulator. End switch fails → zone calls but circulator never starts.
-
-STEAM BOILER (residential):
-  Operate at <2 PSI — a pressure gauge reading above 2 PSI is already high.
-  Pressuretrol: cuts burner at setpoint. Wrong setting → short cycles or never shuts off.
-  Water level: sight glass should show water at midpoint. Low water → LWCO shuts it down.
-  Steam traps: fail open (steam blows through) → banging, water hammer, uneven heat. Fail closed → radiator stays cold.
-  Main vents: allow air out so steam can enter. Clogged main vent → steam backs up, uneven heat across zones.
 
 ════════════════════════════════════════
 ZONING SYSTEMS
 ════════════════════════════════════════
-Zone board controls motorized dampers in ductwork — each zone has its own thermostat and damper.
-Common brands: Honeywell TrueZONE, Aprilaire, EWC Controls, Daikin/Comfort Controls.
-
-IDENTIFY FIRST: How many zones? Where is the zone board? Where is the bypass damper?
-  Bypass damper is in the supply plenum — opens when multiple zones close to prevent high static.
-
-DIAGNOSTIC SEQUENCE:
-1. Which zone is complaining? Verify that zone's thermostat is calling correctly.
-2. Is the damper for that zone opening? Listen at the damper — should hear motor actuate within 60 sec of call. No movement → damper motor failed or zone board output dead.
-3. Check zone board indicator lights — most boards show which zones are active and if there's a fault.
-4. Bypass damper stuck closed → high static when multiple zones close → whistling, airflow complaints system-wide.
-5. Bypass damper stuck open → supply air short-circuits back to return → system runs constantly, never satisfies any zone.
-
-Common failures:
-→ Zone damper motor fails closed → that zone gets no air. Feels like a refrigerant problem.
-→ Zone damper motor fails open → that zone gets air even when not calling. Room overheats or overcools.
-→ Zone board transformer: usually 40VA. Shared with stats → measure 24V at board. Under 18V = overloaded.
-→ Single zone system that acts like it has no zones → check if someone bypassed the zone board.
-
-Bypass damper setting: most are adjustable (spring-loaded or motorized). Too much bypass = poor capacity. Too little = high static, noise, heat exchanger cracks on furnace.
+Brands: Honeywell TrueZONE, Aprilaire, EWC Controls. Bypass damper in supply plenum — opens when zones close to prevent high static.
+Zone no air → damper motor failed closed. Zone always on → motor failed open.
+Bypass stuck closed → high static, whistling. Bypass stuck open → system runs, never satisfies.
+Zone board transformer 40VA — check 24V at board. Under 18V = overloaded (added stats/accessories).
+Zone calls but no circulator (hydronic) → end switch not closing on that zone valve.
 
 ════════════════════════════════════════
 WHOLE-HOUSE HUMIDIFIERS
 ════════════════════════════════════════
-Two types — identify before diagnosing:
-  Bypass humidifier (Aprilaire 400/600): fan in air handler blows air through water-soaked pad. Bypass duct connects supply to return. Only runs when air handler runs.
-  Fan-powered (Aprilaire 700, Honeywell HE360): has its own fan motor, can run independently of air handler.
-
-DIAGNOSTIC SEQUENCE (no humidity):
-1. Is the humidistat calling? Set it above current RH, verify 24V output on the call wire.
-2. Solenoid valve: 24V at solenoid = should open. No water flow with voltage = solenoid failed. Common failure on older units.
-3. Water panel (evaporator pad): mineral scale buildup = no evaporation. Replace every season. If solid white brick of scale = been years since replacement.
-4. Float valve / saddle valve: saddle valve on supply line can close or clog. Verify water is reaching the humidifier.
-5. Bypass damper (bypass type): summer position = closed. If left closed in winter → no airflow through pad → no humidity. Check damper position first on any bypass unit complaint.
-6. Drain line: clogged drain → overflow, water damage. Check and clear every season.
-
-Fan-powered unit: also check fan motor amp draw. Seized motor = no airflow through pad = no evaporation but solenoid still opens = water floods pan.
-Humidistat wiring: humidistat in series with the solenoid. Some are wired to the furnace board (requires furnace to call), some are independent. Verify wiring matches the installation type.
+Bypass (Aprilaire 400/600): needs airflow, bypass duct supply-to-return. Check bypass damper position — summer = closed, winter = open. Closed in winter = no humidity, no error.
+Fan-powered (Aprilaire 700, HE360): independent fan. Seized fan motor = solenoid still opens, water floods pan.
+No humidity: humidistat calling? → solenoid 24V? → water reaching pad (saddle valve open)? → pad scaled (replace if solid white brick) → drain clear.
 
 ════════════════════════════════════════
 ELECTRIC HEAT STRIPS AND SEQUENCERS
 ════════════════════════════════════════
-Electric heat strips are resistance heaters in the air handler — backup/emergency heat on heat pumps, primary heat on electric air handlers.
-Sequencers stagger the strips on at timed intervals to prevent a huge inrush current spike. One sequencer typically controls one or two strips.
-
-IDENTIFY FIRST: How many kW of heat? How many stages? 10kW, 15kW, 20kW are common. Check data plate.
-  Each stage typically 5kW. A 10kW system has 2 stages, 20kW has 4.
-
-DIAGNOSTIC SEQUENCE (no heat on electric air handler or heat pump aux):
-0. DROPPED LEG — check this before anything else. #1 cause of no-heat on all-electric.
-   Measure L1–L2 (should be 220–240V), L1–N (~120V), L2–N (~120V).
-   Single dead leg → blower runs on 120V from good leg, strips produce zero heat. Looks like total failure.
-1. Blower running? Strips will not energize without blower airflow — safety interlock. Confirm blower before sequencer.
-2. Verify W2 is energized at the air handler board (second stage call). If no W2 signal → thermostat or wiring issue, not the strips.
-3. Check sequencer: 24V signal in (from board) → bimetal heats up → contacts close (delay 30–90 sec) → line voltage to strip.
-   Test sequencer: apply 24V to bimetal terminals, wait 60 sec, check continuity across line voltage contacts. Open contacts after 60 sec = failed sequencer.
-   Sequencer welded closed: contacts stuck shut → strips stay energized after call ends → limit trips on idle → unit won't heat next call.
-4. High limit on heat strip: trips at 120–150°F (varies). Manual reset or auto-reset. Find the airflow cause before resetting — never bypass a limit.
-5. Check heat strip element: continuity across element terminals (power OFF). OL = burned-out element. Resistance should be low (3–10Ω depending on kW).
-6. Breaker: electric strips pull heavy amps. 10kW = ~42A at 240V. Weak breaker trips under load. Test with amp clamp while energized — compare to rated amps.
-
-Common failure pattern: one sequencer fails → half the heat strips don't energize → system heats slowly, struggles to keep up in cold weather → looks like refrigerant issue or undersized equipment.
+Dropped leg first — always. L1–L2 should be 220–240V, each leg to neutral ~120V. Dead leg = blower runs (on good leg), strips make zero heat. Looks like total failure.
+Sequencer: 24V in → bimetal heats → contacts close (30–90 sec delay) → line voltage to strip. Test: apply 24V to bimetal, wait 60 sec, check continuity across line contacts.
+Strip element: continuity across terminals (power off). OL = burned element. Resistance 3–10Ω.
+One failed sequencer → half the strips dead → heats slowly, struggles at design conditions. Looks like undersized or low charge.
+High limit on strip trips at 120–150°F. Find the airflow cause before resetting.
 
 ════════════════════════════════════════
 GAS LINE PRESSURE AND LP/PROPANE SPECIFICS
@@ -709,110 +585,47 @@ LP/PROPANE — key differences from natural gas:
 ════════════════════════════════════════
 GEOTHERMAL / GROUND-SOURCE HEAT PUMPS
 ════════════════════════════════════════
-Heat pump that exchanges heat with the ground (or well water) instead of outdoor air. Dramatically different from air-source heat pump — no defrost cycle, stable efficiency year-round.
-
-IDENTIFY FIRST: Closed loop or open loop?
-  Closed loop: antifreeze solution circulates through buried pipes. Check antifreeze concentration (should handle -20°F or per design spec).
-  Open loop: draws from well, discharges to drain or second well. Well pump and water quality are part of the system.
-
-Key diagnostic differences:
-  No outdoor unit. No defrost. No reversing valve in some designs (cooling-only ground loop).
-  Loop fluid temp: entering water temp (EWT) is the equivalent of outdoor ambient. 45–75°F is normal for closed loop.
-  Low EWT in winter → system works harder, may not make capacity → not a refrigerant problem.
-  Flow rate: must meet manufacturer spec (typically 2.5–3 GPM per ton). Low flow → poor heat exchange, high discharge temp, lockout.
-
-Diagnostic sequence:
-1. Check loop pressure and flow. Low pressure = leak in loop or flow center.
-2. Antifreeze concentration (closed loop): refractometer test. Too weak → may freeze in pipes.
-3. Entering and leaving water temps: ΔT across unit should be 8–12°F (cooling) or 5–10°F (heating).
-4. Flow center: two pumps, one for each loop direction. Pump failure → no flow → high pressure lockout.
-5. Desuperheater (if installed): heats domestic hot water. Broken desuperheater pump is common — won't affect space conditioning but wastes efficiency.
-6. Well pump (open loop): failing pump = low flow = lockout. Check pressure tank and pump amps.
-
-Refrigerant circuit: same R-410A or R-454B as air-source. Same gauge readings, same SH/SC targets.
+No outdoor unit. No defrost. Entering water temp (EWT) replaces outdoor ambient — 45–75°F normal for closed loop. Low EWT = normal at low ambient, not a refrigerant problem.
+Flow rate: 2.5–3 GPM per ton. Low flow → poor heat exchange, high discharge, lockout. Check loop pressure (leak = low pressure) and flow center pumps.
+EWT/LWT delta: 8–12°F cooling, 5–10°F heating. Outside that = flow or refrigerant issue.
+Antifreeze (closed loop): refractometer, should handle -20°F. Open loop: well pump pressure and flow.
+Same R-410A/R-454B refrigerant circuit as air-source — same gauge targets.
 
 ════════════════════════════════════════
-ERV / HRV (ENERGY / HEAT RECOVERY VENTILATORS)
+ERV / HRV
 ════════════════════════════════════════
-ERV = transfers heat and moisture. HRV = transfers heat only (better for humid climates in winter).
-
-IDENTIFY: standalone unit with its own duct runs, or integrated with the air handler?
-  Integrated: ERV connects to air handler return and supply. Can cause airflow and humidity complaints if malfunctioning.
-  Standalone: has its own supply and exhaust fans, separate duct system.
-
-Common complaints and causes:
-  High humidity in winter → ERV core bypass stuck open (mixing too much outdoor air without energy recovery).
-  Low humidity in winter → ERV running too much or core fouled (not recovering moisture).
-  High static on air handler → ERV damper stuck open, adding resistance to return side.
-  Cold air drafts → fresh air duct not tempered, damper stuck open when not calling.
-
-Diagnostic:
-  Filters: ERVs have 2–4 filters. Check first — dirty filters are the most common cause. Check every call.
-  Core: remove and inspect. Clogged with dust = poor energy recovery. Clean with warm water, gentle soap.
-  ERV rotary wheel (ERV only, not HRV): verify wheel spins freely. Stopped wheel = unit acts as a plain exhaust fan with zero energy recovery. Check drive belt and motor before anything else on a "not recovering" complaint.
-  Frost protection: in cold climates, ERV has defrost mode. If frost protection fails → core freezes → no ventilation.
-  Controls: most have a simple timer or wall control. Verify it's set to the right ventilation rate (typically 0.35 ACH per code).
+Filters first — always. Dirty filters cause most ERV complaints. ERVs have 2–4 filters, check all.
+ERV wheel stopped → unit acts as plain exhaust fan, zero energy recovery. Check belt/motor first.
+High static on air handler → ERV damper stuck open. Cold drafts → damper stuck open when not calling.
+High humidity in winter → core bypass stuck open. Core fouled → clean with warm water.
+Frost protection failure → core freezes → no ventilation (cold climate winter call).
 
 ════════════════════════════════════════
 WHOLE-HOUSE DEHUMIDIFIERS
 ════════════════════════════════════════
-Standalone units (Aprilaire 1850/1870, Santa Fe Compact/Ultra) wired into the return duct or operating independently.
-
-IDENTIFY FIRST: ducted (wired into HVAC system) or standalone (drains independently)?
-  Ducted units pull air from the return, dehumidify it, and discharge back to the supply or return.
-
-DIAGNOSTIC SEQUENCE:
-1. Is the dehumidistat calling? Set RH lower than actual. Verify 24V or 120V signal to unit.
-2. Compressor running? Dehumidifiers have a small refrigerant circuit. If compressor hums but doesn't start → capacitor (same as HVAC). If compressor locked out → high pressure, low pressure, or thermal overload.
-3. Drain: most critical part. Gravity drain must have continuous fall. Condensate pump failure = backup, float shuts off unit. Pour water into pan — pump should activate.
-4. Coil icing: dirty filter or low ambient temp → coil ices → unit locks out. Below 65°F ambient → icing is likely. Most have a low-temp lockout (55–60°F).
-5. Fan motor: if fan fails, compressor overheats and locks out. Check amp draw.
-6. Integration with HVAC: if dehumidistat is wired to de-energize the air handler's Y terminal and run the fan only → verify wiring matches the control board's dehumidification input.
+Compressor hums, won't start → cap (same as any HVAC). Drain is the most common failure point — gravity drain needs continuous fall, condensate pump trips float on backup.
+Coil icing → dirty filter or ambient below 65°F. Most units lock out below 55–60°F.
+HVAC integration: dehumidistat wired to de-energize Y, run fan-only. Verify wiring matches board's dehumidification input (not all boards have one).
 
 ════════════════════════════════════════
 TANKLESS WATER HEATERS
 ════════════════════════════════════════
-Common brands: Navien, Rinnai, Noritz, Rheem, Takagi. Gas-fired or electric. Sealed combustion (PVC flue) standard on modern units.
-
-IDENTIFY: gas or electric? Condensing or non-condensing? (condensing = PVC flue, produces condensate)
-
-DIAGNOSTIC SEQUENCE:
-1. Error code: every tankless unit has a display. Code first, always. Brand apps available (Navien app, Rinnai app) for detailed fault history.
-2. Cold water sandwich: brief burst of cold water between hot slugs → multiple fixtures cycling OR set temp too close to incoming water temp. Not a failure.
-3. Minimum flow rate: tankless requires minimum flow to fire (typically 0.5 GPM). Partially closed fixture or pressure-balance valve → unit won't fire.
-   Cold water inlet screen (at the cold water inlet connection): mineral scale clogs it → low flow → unit won't fire. Pull and clean every call in hard water areas. Often resolves "won't ignite" with no error code.
-   Flow sensor: if unit shows zero response to hot water demand even with adequate flow → clean or replace flow sensor.
-4. Scale in heat exchanger: hard water areas → heat exchanger scales up → error codes for high temp or overheating. Flush with white vinegar or descaler annually.
-5. Gas supply: tankless pulls high BTU on demand (180,000–199,000 BTU). Undersized gas line = pressure drop = unit won't fire at full demand. Check inlet pressure under full load.
-6. Venting: condensing units use PVC. Same rules as 90%+ furnace — check for blockage, proper slope for condensate drainage.
-7. Cold climate freeze protection: must be winterized if power goes out. Most have freeze protection down to 20°F with power on.
-
-Common Navien-specific: NR/NCB series — heat exchanger scale and cold water sandwich are top complaints. Annual flush recommended.
-Common Rinnai-specific: Code 11 = no ignition (gas supply, igniter, flame sensor). Code 12 = flame failure (gas pressure, dirty flame rod).
+Error code first — every unit has a display. Navien/Rinnai apps for fault history.
+Cold water sandwich (cold burst mid-draw) = not a failure. Multiple fixtures cycling or set temp too close to inlet temp.
+Won't fire, no code: check cold water inlet screen (mineral scale chokes flow). Minimum flow ~0.5 GPM needed to ignite.
+Heat exchanger scale: descale annually in hard water. High-temp error codes in hard water areas = scale.
+Gas: pulls 180–200k BTU on demand. Undersized line → pressure drop → won't fire at full demand. Check inlet pressure under load.
+Venting: condensing units = PVC, same rules as 90%+ furnace.
+Rinnai Code 11 = no ignition. Code 12 = flame failure.
 
 ════════════════════════════════════════
-EVAPORATIVE COOLERS (SWAMP COOLERS)
+EVAPORATIVE COOLERS
 ════════════════════════════════════════
-Common in low-humidity climates: Arizona, Nevada, New Mexico, Colorado, parts of California. Works by evaporating water — only effective when outdoor RH is below 60%. Above 60% RH = no cooling effect.
-
-IDENTIFY: direct evaporative (single stage) or indirect/two-stage? Roof-mounted or side-mounted?
-  Single stage: simple, common residential. Water pump, pads, blower motor, float valve.
-  Two-stage indirect: first stage cools without adding humidity, second stage evaporates. Higher efficiency but complex.
-
-COMPONENTS:
-  Water pump: recirculates water over pads. Pump failure → dry pads → no cooling.
-  Pads: cellulose (aspen) or rigid synthetic. Aspen: replace every season. Rigid: clean with hose, replace every 3–5 yrs.
-  Float valve: controls water level in sump. Same as toilet — if stuck open, overflow. If stuck closed, pump runs dry.
-  Blower motor: direct drive or belt drive. Belt-drive: check belt tension and pulley alignment.
-  Water distribution: spider tube or distribution bar at top of pads. Clogged holes → dry spots on pad → uneven cooling.
-
-DIAGNOSTIC SEQUENCE:
-1. Pads: pull and inspect. Mineral buildup (white crust) blocks airflow and water distribution. Scale = replace or descale.
-2. Pump: is water flowing over pads? Watch the top of the pad — should see water running evenly.
-3. Float valve: water level should be 2–3" in sump. Too high = overflow. Too low = pump running dry (humming but no water).
-4. Blower motor: amp draw vs nameplate. Belt-drive: check belt.
-5. Performance check: only valid when outdoor RH < 60%. Measure supply air temp — should be 15–25°F below outdoor wet bulb temp.
-6. Winterization: must drain, cover, and remove pads in freezing climates. Frozen sump = cracked pan.
+Only effective below 60% outdoor RH. Performance check: supply air should be 15–25°F below outdoor wet bulb.
+Pads: mineral buildup blocks airflow. Aspen = replace yearly. Rigid = clean with hose, replace every 3–5 yrs.
+Float valve: sump level 2–3". Stuck open = overflow. Stuck closed = pump runs dry.
+Pump failure = dry pads, no cooling. Spider tube clogged = dry spots on pad.
+Belt-drive blower: check belt tension and pulley alignment.
 
 ════════════════════════════════════════
 CAPACITOR DIAGNOSIS
